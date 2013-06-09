@@ -1,0 +1,20 @@
+<div class="btnbar">
+  <button id="btn_[#UID]_apply" class="btn" type="button">Apply</button>
+  <button id="btn_[#UID]_cancel" class="btn" type="button">Cancel</button>
+  <button id="btn_[#UID]_ok" class="btn" type="button">OK</button>
+</div>
+[#:js event='widget, load']
+js.dom.addEventListener('btn_[#UID]_apply', 'click', function (event) {
+  this.doEvent('apply');
+}, this);
+js.dom.addEventListener('btn_[#UID]_cancel', 'click', function (event) {
+  this.doEvent('cancel');
+}, this);
+js.dom.addEventListener('btn_[#UID]_ok', 'click', function (event) {
+  this.doEvent('ok');
+}, this);
+[#:end js]
+[#:css]
+.btnbar {text-align: right;}
+.btnbar button {width:75px;}
+[#:end css]

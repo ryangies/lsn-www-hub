@@ -1,0 +1,11 @@
+[#:css]
+  .mybox {width:400px;height:400px;overflow:auto;background:red;}
+[#:end css]
+
+<a rel="popup" href="#lorem-ipsum">Show Popup Dialog</a>
+
+[#:into ./main.ht _id='lorem-ipsum']
+  <div class="mybox">
+    [#/res/var/lorem-ipsum.html]
+  </div>
+[#:end into]

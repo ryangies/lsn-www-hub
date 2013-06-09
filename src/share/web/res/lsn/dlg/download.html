@@ -1,0 +1,40 @@
+[#:into ./base.html]
+<div id="progress[#UID]"></div>
+<input id="uri[#UID]" name="values/uri" type="text" value="http://"/>
+<div id="to[#UID]"><h1 class="dialog-title">Save as</h1>[#./create.html]</div>
+[#:end into]
+
+[#:css]
+#uri[#UID] {width:24em;padding:0 .2em;}
+#progress[#UID] {position:absolute;top:0;left:0;margin:.8em 1.5em;border:none;padding:0;}
+.dialog-title {text-align:center;}
+[#:end css]
+
+[#:js src=`./js/Download.js`]
+
+[#:js]
+var dl[#UID];
+[#:end js]
+
+[#:js event='dialog, ok']
+  dl[#UID].download();
+[#:end js]
+
+[#:js event='dialog, load']
+  dl[#UID] = new js.lsn.ext.dlg.Download(this, {
+    uri:        js.dom.getElement('uri[#UID]'),
+    progress:   js.dom.getElement('progress[#UID]'),
+    to:         js.dom.getElement('to[#UID]'),
+    name:       js.dom.getElement('name[#UID]'),
+    btnOk:      js.dom.getElement('btn_[#UID]_ok'),
+    btnCancel:  js.dom.getElement('btn_[#UID]_cancel')
+  });
+[#:end js]
+
+[#:js event='dialog, hide']
+  dl[#UID].stopMonitor();
+[#:end js]
+
+__DATA__
+
+title => Download a file from the internet

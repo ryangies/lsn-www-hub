@@ -1,0 +1,817 @@
+#!/usr/bin/perl -w
+package App::LSN::ServerConfig::Main;
+use strict;
+
+use base qw(App::Console::CommandScript);
+use Perl::Module;
+use Error qw(:try);
+use Data::Hub qw($Hub);
+use Data::Hub::Util qw(:all);
+use Data::OrderedHash;
+use App::TMS::Client;
+use App::Console::Color qw(:all);
+use Cwd qw(cwd);
+
+our %USAGE = ();
+
+# ------------------------------------------------------------------------------
+# new - Construct a new instance
+# new
+# ------------------------------------------------------------------------------
+
+sub new {
+  my $class = ref($_[0]) ? ref(shift) : shift;
+  bless {}, $class;
+}
+
+sub _get_config {
+  my $sconf = $Hub->{'/config.hf'} or throw Error::Simple "Missing config.hf\n";
+  my $pconf = $Hub->vivify('/proxy.hf') or throw Error::Simple "Cannot access proxy.hf\n";
+  cwd() ne $sconf->{'dir-livesite-conf'} and throw Error::Simple "Cwd is invalid\n";
+
+  # Legacy support
+  $$sconf{'use-global-user'} = $$sconf{'use-global-apache'}
+    unless defined $$sconf{'use-global-user'};
+
+  ($sconf, $pconf);
+}
+
+sub _domain_opts {
+  my ($pconf, $args) = @_;
+  my $opts = my_opts($args);
+  my $domain_arg = shift @$args or throw Error::Simple "No domain name provided\n";
+  my @domains = $domain_arg eq 'all'
+    ? $pconf->get("/hosts/*/domain")->values()
+    : split ',', $domain_arg;
+  ($opts, @domains);
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'list'} = {
+  summary => 'List all domains',
+  params => Data::OrderedHash->new(
+  ),
+};
+
+sub list {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  my ($sconf, $pconf) = _get_config();
+  $pconf->get("/hosts")->iterate(sub {
+    my ($idx, $host) = @_;
+    my $items = join (',',
+      @{$host->{vhosts}},
+      @{$host->{services}},
+      @{$host->{features}},
+    );
+    my $ip = $host->{ip} || ($sconf->{'use-global-apache'}
+      ? $sconf->{'server-external-ip'}
+      : $sconf->{'server-internal-ip'});
+    my $status = $$host{'disabled'} ? '-' : ' ';
+    printf "%s %-34s %-16s %s\n", $status, $host->{domain}, $ip, $items;
+  });
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'add'} = {
+  summary => 'Add a domain',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name',
+  ),
+};
+
+sub add {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  my $domain = shift or throw Error::Simple "No domain name provided\n";
+  my ($sconf, $pconf) = _get_config();
+  my $host = $pconf->get("/hosts/{domain eq $domain}/{:first}");
+  return warn "$domain already exists\n" if $host;
+  $pconf->set("/hosts/<next>", Data::OrderedHash->new(
+    disabled => 0,
+    domain => $domain,
+    services => [],
+    vhosts => [],
+    features => [],
+  ));
+  $pconf->save();
+  my $server_tms = App::TMS::Client->new(cwd());
+  $server_tms->exec('update');
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'version'} = {
+  summary => 'Show library version for a domain',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name (or comma-separated list of names, or "all")',
+  ),
+};
+
+sub version {
+  my $self = shift;
+  my ($sconf, $pconf) = _get_config();
+  my ($opts, @domains) = _domain_opts($pconf, \@_);
+  my @result = ();
+  foreach my $domain (@domains) {
+    my $host = $pconf->get("/hosts/{domain eq $domain}/{:first}");
+    $self->fail("No such domain: $domain") unless $host;
+    if (!$$host{'disabled'}) {
+      if (my $fwd = $$host{'forward-to-domain'}) {
+        push @result, ['', c_sprintf("%s -> %_gs", $$host{'domain'}, $fwd)];
+      } else {
+        my $home = $$sconf{'dir-vhost-root'} . '/' . $$host{'domain'};
+        my $local_path = "$home/opt/livesite";
+        my $lsn_dir = -e $local_path
+          ? `readlink -f $local_path`
+          : '(default)';
+        chomp $lsn_dir;
+        push @result, [$lsn_dir, $$host{'domain'}];
+      }
+    }
+  }
+  foreach my $fields (sort {$a->[0] cmp $b->[0]} @result) {
+    c_printf "%_b-20s %s\n", @$fields;
+  }
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'disable'} = {
+  summary => 'Disable a domain',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name (or comma-separated list of names, or "all")',
+  ),
+};
+
+sub disable {
+  my $self = shift;
+  my ($sconf, $pconf) = _get_config();
+  my ($opts, @domains) = _domain_opts($pconf, \@_);
+  my @mods = ();
+  foreach my $domain (@domains) {
+    my $host = $pconf->get("/hosts/{domain eq $domain}/{:first}");
+    $self->fail("No such domain: $domain") unless $host;
+    if ($$host{'disabled'}) {
+      warn "Already disabled: $domain\n";
+    } else {
+      $$host{'disabled'} = 1;
+      push @mods, $domain;
+      warn "Disabling: $domain\n";
+    }
+  }
+  if (@mods) {
+    $pconf->save();
+    my $server_tms = App::TMS::Client->new(cwd());
+    $server_tms->exec('update');
+    $self->initd(join ',', @domains);
+  }
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'enable'} = {
+  summary => 'Enable a previously disabled domain',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name (or comma-separated list of names, or "all")',
+  ),
+};
+
+sub enable {
+  my $self = shift;
+  my ($sconf, $pconf) = _get_config();
+  my ($opts, @domains) = _domain_opts($pconf, \@_);
+  my @mods = ();
+  foreach my $domain (@domains) {
+    my $host = $pconf->get("/hosts/{domain eq $domain}/{:first}");
+    $self->fail("No such domain: $domain") unless $host;
+    if ($$host{'disabled'}) {
+      $$host{'disabled'} = 0;
+      push @mods, $domain;
+      warn "Enabling: $domain\n";
+    } else {
+      warn "Already enabled: $domain\n";
+    }
+  }
+  if (@mods) {
+    $pconf->save();
+    my $server_tms = App::TMS::Client->new(cwd());
+    $server_tms->exec('update');
+    $self->initd(join ',', @domains);
+  }
+}
+
+$USAGE{'initd'} = {
+  summary => 'Create or remove init script for domain',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name (or comma-separated list of names, or "all")',
+  ),
+};
+
+sub initd {
+  my $self = shift;
+  my ($sconf, $pconf) = _get_config();
+  my ($opts, @domains) = _domain_opts($pconf, \@_);
+  my $create = [];
+  my $delete = [];
+  foreach my $domain (@domains) {
+    my $host = $pconf->get("/hosts/{domain eq $domain}/{:first}");
+    $self->fail("No such domain: $domain") unless $host;
+    my $bucket = $$host{'disabled'} ? $delete : $create;
+    push @$bucket, $domain;
+  }
+  my $server_tms = App::TMS::Client->new(cwd());
+  foreach my $domain (@$create) {
+    my $target = "init.d/$domain";
+    $server_tms->exec('compile', 'apache/init.d/domain', $target,
+      -use => 'config.hf');
+    `chmod u+x,g+x $target`;
+    $self->print(`./$target start`);
+  }
+  foreach my $domain (@$delete) {
+    my $target = "init.d/$domain";
+    if (-e $target) {
+      $self->print(`./$target stop`);
+      $server_tms->exec('remove', $target);
+    }
+  }
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'reconfig'} = {
+  summary => 'Reconfigure after changes to web-server paradigm',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name (or comma-separated list of names, or "all")',
+  ),
+};
+
+sub reconfig {
+  my $self = shift;
+  my ($sconf, $pconf) = _get_config();
+  my ($opts, @domains) = _domain_opts($pconf, \@_);
+  my @mods = ();
+  foreach my $domain (@domains) {
+    my $host = $pconf->get("/hosts/{domain eq $domain}/{:first}");
+    $self->fail("No such domain: $domain") unless $host;
+    my $port = $sconf->{'port'};
+    if (!$sconf->{'use-global-apache'}) {
+      # Grab next avail port and bump it up
+      $port = $pconf->get('next-avail-port') || 4000;
+      $pconf->set('next-avail-port', $port + 1);
+    }
+    $host->{'port'} = $port;
+    push @mods, $host;
+    warn "Setting port: $domain:$port\n";
+  }
+  if (@mods) {
+    $pconf->save();
+    my $server_tms = App::TMS::Client->new(cwd());
+    $server_tms->exec('update');
+    foreach my $host (@mods) {
+      next unless grep_first { $_ eq 'livesite' } @{$host->{'features'}};
+      my $domain = $$host{'domain'};
+      my $vh_dir = "$sconf->{'dir-vhost-root'}/$domain";
+      warn "Configuring: $vh_dir\n";
+      `cd $vh_dir;lsn-setup config`;
+      $self->chown($domain);
+    }
+  }
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'update'} = {
+  summary => 'Update domain configuration',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name (or comma-separated list of names, or "all")',
+    '[<property>=<value>]' => 'One or more domain poperties',
+    '-enable=<features>' => 'Comma-delimited list of features',
+    '-disable=<features>' => 'Comma-delimited list of features',
+  ),
+  more => <<__end_more,
+properties:
+  ip            Domain ip address
+features:
+  subdomains and services
+    www         Apache configuration for: www.<domain> and <domain>
+    mail        IMAP, SMPT, POP3, and SquirrelMail for: mail.<domain>
+    wiki        Wikimedia for: wiki.<domain>
+    lists       Mailman for: lists.<domain>
+    splunk      Splunk for: splunk.<domain>
+    https       Apache configuration for https://www.<domain> and <domain>
+    dav         Apache configuration for WebDAV access
+  domain configuration
+    svn         Initialize a subversion repository for the domain
+    livesite    Apache configuration for perl-livesite
+    webdav      TODO: Webdav for <domain>
+    x-livesite  Apache configuration for old livesite
+__end_more
+};
+
+sub update {
+  my $self = shift;
+  my ($sconf, $pconf) = _get_config();
+  my ($opts, @domains) = _domain_opts($pconf, \@_);
+  foreach my $domain (@domains) {
+    my $vh_dir = "$sconf->{'dir-vhost-root'}/$domain";
+    my $tms = -d $vh_dir ? App::TMS::Client->new($vh_dir) : undef;
+    my $host = curry($pconf->get("/hosts/{domain eq $domain}/{:first}"))
+      or throw Error::Simple "$domain does not exist\n";
+    foreach my $type (qw(enable disable)) {
+      if (my $value = $opts->{$type}) {
+        for (split ',', $value) {
+          my $sub = $App::LSN::ServerConfig::Features::Features{$type}{$_};
+          unless ($sub) {
+            warn "No such feature: $type/$_\n";
+            next;
+          }
+          try {
+            &$sub([$domain, $sconf, $pconf, $tms, $host, $vh_dir]);
+          } catch Error with {
+            my $ex = shift;
+            warn $ex;
+          };
+        }
+      }
+    }
+    if (@_) {
+      foreach my $kvpair (@_) {
+        my ($k, $v) = $kvpair =~ /^([^=]+)=(.*)$/;
+        $host->set($k, $v);
+      }
+      $pconf->save();
+    }
+    my $server_tms = App::TMS::Client->new(cwd());
+    $server_tms->exec('update');
+  }
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'rename'} = {
+  summary => 'Rename a domain',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Current domain name',
+    '<new-domain>' => 'New domain name',
+  ),
+};
+
+sub rename {
+  my $self = shift;
+  my ($sconf, $pconf) = _get_config();
+  my ($old_domain, $domain) = (shift, shift);
+  my $host = $pconf->get("/hosts/{domain eq $old_domain}/{:first}")
+    or throw Error::Simple "$old_domain does not exist\n";
+  # Update server config
+  $host->{domain} = $domain;
+  $pconf->save();
+  my $items = join (',',
+    @{$host->{vhosts}},
+    @{$host->{services}},
+    @{$host->{features}},
+  );
+  my $server_tms = App::TMS::Client->new(cwd());
+  $server_tms->exec('update');
+  # Update virtual host
+  my $old_vh_dir = "$sconf->{'dir-vhost-root'}/$old_domain";
+  my $vh_dir = "$sconf->{'dir-vhost-root'}/$domain";
+  if (-d $old_vh_dir) {
+    dir_move($old_vh_dir, $vh_dir);
+    # Connect to configuration-template repository
+    my $tms = App::TMS::Client->new($vh_dir);
+    $tms->exec('connect', "$sconf->{'dir-livesite-share'}/server/site", -force => 1);
+    unless ($sconf->{'use-global-user'}) {
+      # Create user, group, and vhost directory as the domain name
+      `groupadd $domain`;
+      `useradd -g $domain -d $vh_dir $domain`;
+      # Set file permissions
+      $self->chown($domain);
+      # Remove old user and group (after chown)
+      `userdel $old_domain`;
+      `groupdel $old_domain`;
+    }
+  }
+  # Update features
+  $self->update($domain, -enable => $items);
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'remove'} = {
+  summary => 'Remove a domain',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name (or comma-separated list of names, or "all")',
+    '-retire' => 'Retire domain',
+  ),
+};
+
+sub remove {
+  my $self = shift;
+  my ($sconf, $pconf) = _get_config();
+  my ($opts, @domains) = _domain_opts($pconf, \@_);
+  foreach my $domain (@domains) {
+    if ($opts->{retire}) {
+      my $vhost_root = $sconf->get('dir-vhost-root') or die;
+      # archive domain
+      if (-d "$vhost_root/$domain") {
+        my $archive_path = $sconf->get('dir-archive')
+          or throw Error::Simple "Missing configuration: dir-archive";
+        -d $archive_path or throw Error::Simple "$!: $archive_path\n";
+        my $archive = "$archive_path/$domain.tar.bz2";
+        throw Error::Simple "Archive exists\n" if -e $archive;
+        my $cwd = cwd();
+        chdir $vhost_root;
+        system 'tar', '-cjpf', $archive, $domain;
+        chdir $cwd;
+        throw Error::Simple "Archive not created\n" unless -e $archive;
+        dir_remove("$vhost_root/$domain");
+        warn "Directory not deleted\n" if -e "$vhost_root/$domain";
+      }
+      # remove proxy config
+      if (my $host = $pconf->get("/hosts/{domain eq $domain}/{:first}")) {
+        $pconf->delete("/hosts/{domain eq $domain}");
+        $pconf->save();
+      } else {
+          throw Error::Simple "No such domain";
+      }
+      # remove user
+      system('userdel', $domain) unless $sconf->{'use-global-user'};
+    }
+    my $server_tms = App::TMS::Client->new(cwd());
+    $server_tms->exec('update');
+  }
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'init'} = {
+  summary => 'Initialize a host directory',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name (or comma-separated list of names, or "all")',
+  ),
+};
+
+sub init {
+  my $self = shift;
+  my ($sconf, $pconf) = _get_config();
+  my ($opts, @domains) = _domain_opts($pconf, \@_);
+  foreach my $domain (@domains) {
+    my $vh_dir = "$sconf->{'dir-vhost-root'}/$domain";
+    my $host = $pconf->get("/hosts/{domain eq $domain}/{:first}")
+      or throw Error::Simple "$domain does not exist\n";
+
+    warn "Host directory: $vh_dir\n";
+
+    # Create user, group, and vhost directory as the domain name
+    if ($sconf->{'use-global-user'}) {
+      dir_create $vh_dir;
+    } else {
+      `groupadd $domain`;
+      `useradd -g $domain -d $vh_dir $domain`;
+    }
+
+    # Create subdirectories
+    dir_create "$vh_dir/config";
+    dir_create "$vh_dir/logs";
+
+    # Connect to configuration-template repository
+    my $tms = App::TMS::Client->new($vh_dir);
+    $tms->exec('connect', "$sconf->{'dir-livesite-share'}/server/site", -force => 1);
+
+    # Set file permissions
+    $self->chown($domain);
+  }
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'chown'} = {
+  summary => 'Set file permissions',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name (or comma-separated list of names, or "all")',
+  ),
+};
+
+sub chown {
+  my $self = shift;
+  my ($sconf, $pconf) = _get_config();
+  my ($opts, @domains) = _domain_opts($pconf, \@_);
+  my ($user, $group, $gsvn) = ();
+  foreach my $domain (@domains) {
+    my $vh_dir = "$sconf->{'dir-vhost-root'}/$domain";
+    `cd $vh_dir;lsn-setup chown`;
+  }
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'rmtmp'} = {
+  summary => 'Remove temporary files',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name (or comma-separated list of names, or "all")',
+  ),
+};
+
+sub rmtmp {
+  my $self = shift;
+  my ($sconf, $pconf) = _get_config();
+  my ($opts, @domains) = _domain_opts($pconf, \@_);
+  foreach my $domain (@domains) {
+    my $vh_dir = "$sconf->{'dir-vhost-root'}/$domain";
+    my $dir = "$vh_dir/tmp";
+    next unless -d $dir;
+    dir_remove $dir;
+    dir_create $dir;
+    print "Removed contents of: $dir\n";
+    `cd $vh_dir;lsn-setup chown`;
+  }
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'rmcache'} = {
+  summary => 'Remove cache files',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name (or comma-separated list of names, or "all")',
+  ),
+};
+
+sub rmcache {
+  my $self = shift;
+  my ($sconf, $pconf) = _get_config();
+  my ($opts, @domains) = _domain_opts($pconf, \@_);
+  foreach my $domain (@domains) {
+    my $dir = "$sconf->{'dir-vhost-root'}/$domain/tmp/response/cache";
+    unless (-d $dir) {
+      warn "$!: $dir\n";
+      next;
+    }
+    dir_remove $dir;
+    print "Removed: $dir\n";
+  }
+}
+
+1;
+
+# ==============================================================================
+
+package App::LSN::ServerConfig::Features;
+use strict;
+
+use Perl::Module;
+use Error::Logical;
+use Data::Hub qw($Hub);
+use Data::Hub::Util qw(:all);
+use Data::OrderedHash;
+use App::TMS::Client;
+use Cwd qw(cwd);
+
+our %Features = (enable => {}, disable => {});
+our @Shared_Services = qw(mail wiki lists splunk);
+
+# ------------------------------------------------------------------------------
+# shared services
+# ------------------------------------------------------------------------------
+
+foreach my $name (@Shared_Services) {
+  $Features{enable}{$name} = sub {
+    my $ctx = shift;
+    my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+    throw Error::Logical "Service is not defined: $name\n"
+      unless $pconf->get("/services/$name");
+    _enable($ctx, 'services', $name);
+  };
+  $Features{disable}{$name} = sub {
+    my $ctx = shift;
+    _disable($ctx, 'services', $name);
+  };
+}
+
+# ------------------------------------------------------------------------------
+# www
+# ------------------------------------------------------------------------------
+
+$Features{enable}{www} = sub {
+  my $ctx = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  my $vhosts = $host->{vhosts} or throw Error::Logical;
+  unless (grep_first {$_ eq 'www'} @$vhosts) {
+    push @$vhosts, 'www';
+    $pconf->save();
+  }
+  unless ($host->{port}) {
+    my $port = $sconf->{port};
+    unless ($sconf->{'use-global-apache'}) {
+      # Grab next avail port and bump it up
+      $port = $pconf->get('next-avail-port') || 4000;
+      $pconf->set('next-avail-port', $port + 1);
+    }
+    $host->{port} = $port;
+    $pconf->save();
+  }
+  $tms->exec('compile', 'apache.d/www.conf', "config/apache.d/www.conf",
+    -use => "file:/$sconf->{'dir-livesite-conf'}/config.hf",
+    "domain=$domain", "port=$host->{port}", -force => 1,
+  );
+  my $inc_dir = "$vh_dir/config/apache.d/inc";
+  mkdir $inc_dir;
+  unless ($sconf->{'use-global-apache'}) {
+    $tms->exec('compile', 'apache.conf', 'config/apache.conf',
+      -use => "file:/$sconf->{'dir-livesite-conf'}/config.hf",
+      "domain=$domain", "port=$host->{port}", -force => 1,
+    );
+    $tms->exec('compile', 'apache.opts', 'config/apache.opts',
+      -force => 1,
+    );
+#   # Create link to startup script
+#   system('ln', '-s', '/etc/init.d/domains', "/etc/init.d/$domain")
+#     unless -e "/etc/init.d/$domain";
+#   # Create link to logs directory
+#   if (my $apache_log_dir = $sconf->{'dir-apache-logs'}) {
+#     $apache_log_dir .= '/' . $domain;
+#     `ln -s $vh_dir/logs $apache_log_dir` unless -e $apache_log_dir;
+#   }
+  }
+};
+
+$Features{disable}{www} = sub {
+  my $ctx = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  $host->delete('vhosts/{eq www}');
+  $host->delete('port');
+  $pconf->save();
+  my $apache_log_dir = $sconf->{'dir-apache-logs'} . '/' . $domain;
+  unless ($sconf->{'use-global-apache'}) {
+    system 'unlink', $apache_log_dir;
+#   system 'unlink', "/etc/init.d/$domain";
+    $tms->exec('remove', "config/apache.conf");
+    $tms->exec('remove', "config/apache.opts");
+  }
+  $tms->exec('remove', "config/apache.d/www.conf");
+};
+
+# ------------------------------------------------------------------------------
+# x-livesite
+# ------------------------------------------------------------------------------
+
+$Features{enable}{'x-livesite'} = sub {
+  my $ctx = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  _enable($ctx, 'features', 'x-livesite');
+  $tms->exec('compile', "apache.d/inc/livesite-a.conf", "config/apache.d/inc/livesite-a.conf",
+    -use => "file:/$sconf->{'dir-livesite-conf'}/config.hf",
+    "domain=$domain", "port=$host->{port}", -force => 1,
+  );
+  $tms->exec('update', "config/apache.conf", "enable-x-livesite=1")
+    unless $sconf->{'use-global-apache'};
+};
+
+$Features{disable}{'x-livesite'} = sub {
+  my $ctx = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  _disable($ctx, 'features', 'x-livesite');
+  $tms->exec('update', "config/apache.d/www.conf", "enable-x-livesite=0");
+  $tms->exec('update', "config/apache.conf", "enable-x-livesite=0")
+    unless $sconf->{'use-global-apache'};
+};
+
+# ------------------------------------------------------------------------------
+# livesite
+# ------------------------------------------------------------------------------
+
+$Features{enable}{livesite} = sub {
+  my $ctx = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  _enable($ctx, 'features', 'livesite');
+};
+
+$Features{disable}{livesite} = sub {
+  my $ctx = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  _disable($ctx, 'features', 'livesite');
+};
+
+# ------------------------------------------------------------------------------
+# https
+# ------------------------------------------------------------------------------
+
+$Features{enable}{https} = sub {
+  my $ctx = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  _enable($ctx, 'features', 'https');
+# _vhost_setopt($ctx, 'global/enable-https', 1);
+# _vhost_update();
+  $tms->exec('update', "config/apache.d/www.conf", "enable-https=1");
+};
+
+$Features{disable}{https} = sub {
+  my $ctx = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  _disable($ctx, 'features', 'https');
+  $tms->exec('update', "config/apache.d/www.conf", "enable-https=0");
+};
+
+# ------------------------------------------------------------------------------
+# svn
+# ------------------------------------------------------------------------------
+
+$Features{enable}{svn} = sub {
+  my $ctx = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  _enable($ctx, 'features', 'svn');
+  my $gsvn = $sconf->{'group-svn'} || 'svnadmin';
+  # Create a Subversion repository
+  unless (-e "$vh_dir/repo") {
+    `svnadmin create --fs-type fsfs $vh_dir/repo`;
+  }
+  if (-e "$vh_dir/repo" && !$sconf->{'use-global-user'}) {
+    `chown -R $domain:$gsvn $vh_dir/repo`;
+    `chmod -R g-w $vh_dir/repo`;
+    `chmod -R g+rw $vh_dir/repo/db`;
+    `chmod -R g+rw $vh_dir/repo/locks`;
+    `chgrp $gsvn $vh_dir`;
+  }
+};
+
+$Features{disable}{svn} = sub {
+  my $ctx = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  _disable($ctx, 'features', 'svn');
+  warn "No implementation for removing subversion repository\n";
+};
+
+# ------------------------------------------------------------------------------
+# dav
+# ------------------------------------------------------------------------------
+
+$Features{enable}{'dav'} = sub {
+  my $ctx = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  _enable($ctx, 'vhosts', 'dav');
+  dir_create "$vh_dir/config/dav";
+  $tms->exec('compile', 'apache.d/dav.conf', "config/apache.d/dav.conf",
+    -use => "file:/$sconf->{'dir-livesite-conf'}/config.hf",
+    "domain=$domain", "port=$host->{port}", -force => 1,
+  );
+  if (! -e "$vh_dir/config/dav/users") {
+    system('htdigest', '-c', "$vh_dir/config/dav/users", 'WebDAV', 'admin');
+  }
+  $tms->exec('update', 'config/apache.opts', 'opt-dav=1');
+};
+
+$Features{disable}{'dav'} = sub {
+  my $ctx = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  _disable($ctx, 'vhosts', 'dav');
+  $tms->exec('remove', "config/apache.d/dav.conf");
+};
+
+# ------------------------------------------------------------------------------
+# _enable
+# ------------------------------------------------------------------------------
+
+sub _enable {
+  my $ctx = shift;
+  my $type = shift;
+  my $name = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  my $items = $host->{$type} ||= [];
+  push_uniq($items, $name);
+  $pconf->save();
+};
+
+# ------------------------------------------------------------------------------
+# _disable
+# ------------------------------------------------------------------------------
+
+sub _disable {
+  my $ctx = shift;
+  my $type = shift;
+  my $name = shift;
+  my ($domain, $sconf, $pconf, $tms, $host, $vh_dir) = @$ctx;
+  $host->delete("/$type/{eq $name}");
+  $pconf->save();
+};
+
+1; # App::LSN::ServerConfig::Features
+
+# ==============================================================================
+
+package main;
+use Data::Hub;
+our $LSN_CONFIG_DIR = $ENV{'LSN_CONFIG_DIR'} || '/etc/livesite';
+chdir $LSN_CONFIG_DIR;
+$Data::Hub::Hub = new Data::Hub($LSN_CONFIG_DIR);
+
+App::LSN::ServerConfig::Main->new()->exec(@ARGV);
+
+__END__
+
+Undocumented
+
+  * proxy.hf - set 'default => 1' 
+  *   to use literal domain name (no subdomain of suffix)
+  *   (should register default server for nginx)

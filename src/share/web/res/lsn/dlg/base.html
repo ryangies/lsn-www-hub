@@ -1,0 +1,22 @@
+[#:into ./frame.html]
+
+<div id="area[#UID]">
+  <div class="flow">
+  [#CONTENT]
+  </div>
+  [#./btnbar/okcancel.html]
+</div>
+
+[#:css]
+#area[#UID] {position:relative;}
+#area[#UID] .btnbar {margin-top:5px;padding-top:5px;}
+#area[#UID] .indt {margin:.5em;}
+#area[#UID] label.sec {display:block;cursor:pointer;}
+#area[#UID] .lbl { color: #4F3405; line-height: 1.8em; }
+#area[#UID] .lbl:hover { cursor: pointer; }
+#area[#UID] .itxt { border: 1px solid; padding: 2px; }
+#area[#UID] .indent { margin: 0 .5em 0 .5em; }
+#area[#UID] .vsep { height: 2px; }
+#area[#UID] .irad { padding: 2px; }
+#area[#UID] div.flow { overflow: auto; }
+[#:end css]

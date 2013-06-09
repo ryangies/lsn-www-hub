@@ -1,0 +1,64 @@
+# HashFile 2.1
+builder => ecma
+copyright => Livesite (c) Livesite Networks, LLC 2006-2013.
+working_dir => ${LSN_SRC_ROOT}/lsn-javascript/src/lib/ecma
+mounts => %{
+  /res => ../src/share/web/res
+}
+target =>     ../src/share/web/res/js/hub.js
+doc_target => ../src/share/web/res/js/docs/hub.doc
+vim_target => ../src/share/web/res/js/docs/hub.vim
+name => Livesite Hub Data Bridge
+version => .003
+files => @{
+  lsn/hubb/command/Base.js
+  lsn/hubb/command/Fetch.js
+  lsn/hubb/command/Store.js
+  lsn/hubb/command/Update.js
+  lsn/hubb/command/Create.js
+  lsn/hubb/command/Insert.js
+  lsn/hubb/command/Remove.js
+  lsn/hubb/command/Rename.js
+  lsn/hubb/command/Copy.js
+  lsn/hubb/command/Move.js
+  lsn/hubb/command/Reorder.js
+  lsn/hubb/command/Download.js
+  lsn/hubb/command/Progress.js
+  lsn/hubb/command/Batch.js
+  lsn/hubb/command.js
+
+  lsn/hubb/core/Icons.js
+  lsn/hubb/core/Node.js
+  lsn/hubb/core/ArrayNode.js
+  lsn/hubb/core/HashNode.js
+  lsn/hubb/core/ScalarNode.js
+  lsn/hubb/core/RootNode.js
+  lsn/hubb/core/XFR.js
+  lsn/hubb/core/DataBridge.js
+
+  lsn/hubb/ui/ui.js
+  lsn/hubb/ui/FileList.js
+  lsn/hubb/ui/FileItem.js
+  lsn/hubb/ui/TreeNode.js
+  lsn/hubb/ui/TreeView.js
+  lsn/hubb/ui/TreeStyles.js
+  lsn/hubb/ui/TreeBox.js
+  lsn/hubb/ui/ComboBox.js
+  lsn/hubb/ui/TargetDialog.js
+  lsn/hubb/ui/CopyDialog.js
+  lsn/hubb/ui/MoveDialog.js
+  lsn/hubb/ui/FolderList.js
+  lsn/hubb/ui/DataList.js
+  lsn/hubb/ui/CreateDialog.js
+  lsn/hubb/ui/NewDirectoryDialog.js
+  lsn/hubb/ui/NewFileDialog.js
+  lsn/hubb/ui/UploadDialog.js
+  lsn/hubb/ui/DownloadDialog.js
+  lsn/hubb/ui/BrowseDialog.js
+  lsn/hubb/ui/input/Control.js
+  lsn/hubb/ui/input/InputBoolean.js
+  lsn/hubb/ui/input/InputTextarea.js
+  lsn/hubb/ui/input/InputText.js
+  lsn/hubb/ui/input/ResizeTextarea.js
+  lsn/hubb/ui/input/StatusIcon.js
+}

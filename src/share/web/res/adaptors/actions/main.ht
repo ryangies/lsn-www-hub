@@ -1,0 +1,58 @@
+[#:comment]
+
+  ------------------------------------------------------------------------------
+  Deprecated, use ./include.ht instead.
+  ------------------------------------------------------------------------------
+  The difference is in the callback arguments. Here the second argument is 
+  `elem`, which is not standard. That has been moved into the `action` argument.
+  ------------------------------------------------------------------------------
+
+  Include this file to get global action listeners on anchors and buttons.
+
+    <a href="#action:changeColor:red">Red</a>
+    <button value="action:changeColor:tan">Tan</button>
+
+    js.dom.addActionListener('changeColor', function (action, elem, arg1) {
+      js.dom.setStyle(js.dom.getBody(), 'background-color', arg1);
+    });
+
+  In the above:
+
+    arg1    will be either 'red' or 'tan'.
+    elem    will be the A or BUTTON which triggered the action
+    action  is a js.action.ActionEvent object
+
+  Adaptors will be attached:
+
+    a) When the document is loaded (DOMContentLodaded)
+    b) When elements are created using js.dom.createElement
+
+[#:end comment]
+[#:js src='/res/js/livesite.js']
+[#:js src='/res/js/lsn-adaptors.js']
+[#:js]
+
+  var actionAdaptor = new js.dom.ActionAdaptor();
+
+  actionAdaptor.attach = function (elem) {
+    var action = null;
+    switch (elem.tagName) {
+      case 'A':
+        var href = js.dom.getAttribute(elem, 'href');
+        if (href) {
+          action = new js.http.Location(href).getHash();
+        }
+        break;
+      case 'BUTTON':
+        action = js.dom.getAttribute(elem, 'value');
+        break;
+    }
+    if (action) {
+      this.createListener(elem, action);
+    }
+    return false;
+  };
+
+  js.dom.addAdaptor(['A', 'BUTTON'], actionAdaptor);
+
+[#:end js]

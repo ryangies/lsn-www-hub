@@ -1,0 +1,20 @@
+[#:into ./base.html]
+
+<div id="list[#UID]"></div>
+
+[#:css]
+#list[#UID] {width:30em;padding:.5em;height:20em;position:relative;overflow:auto;}
+[#:end css]
+
+[#:js event='dialog, ready']
+  var elem = js.dom.getElement('list[#UID]');
+  var ra = this.params.ra || '/';
+  var sel = this.params.sel || ra;
+  var hub = this.params.hub || new js.hub.Controller();
+  this.props.list = new js.hub.List(elem, hub, ra);
+  this.props.list.expand(ra);
+  this.props.list.select(sel);
+[#:end js]
+
+__DATA__
+title => Browse

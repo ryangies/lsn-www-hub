@@ -1,0 +1,69 @@
+# HashFile 2.1
+builder => ecma
+copyright => Livesite (c) Livesite Networks, LLC 2006-2013.
+working_dir => ${LSN_SRC_ROOT}/lsn-javascript/src/lib/ecma
+target => ../src/share/web/res/js/ecma.js
+doc_target => ../src/share/web/res/js/docs/ecma.doc
+vim_target => ../src/share/web/res/js/docs/ecma.vim
+name => ECMAScript
+version => .005
+files => @{
+  # Base
+  ECMAScript.js
+  lang/lang.js
+  util/util.js
+  units/units.js
+  date/date.js
+  error/error.js
+  error/programatic.js
+  error/strings.js
+  threads/threads.js
+  impl/Parameters.js
+  # Paul Johnston's sha1 algorithms
+  crypt/sha1.js
+  # Console logging
+  console/console.js
+  # Action framemwork
+  action/ActionDispatcher.js
+  action/ActionListener.js
+  action/ActionEvent.js
+  # Data structures
+  data/utf8.js
+  data/md5.js
+  data/data.js
+  data/base64.js
+  data/entities.js
+  data/Pool.js
+  data/Node.js
+  data/NodeLayer.js
+  data/Address.js
+  data/Container.js
+  data/Array.js
+  data/HashList.js
+  data/XFR.js
+  data/JSON.js
+  # HTTP Requests
+  http/Location.js
+  http/http.js
+  http/Request.js
+  http/JSONRequest.js
+  http/Cookies.js
+  # Web scripting
+  platform/platform.js
+  dom/dom.js
+  dom/constants.js
+  dom/node.js
+  dom/actions.js
+  dom/console.js
+  dom/include.js
+  dom/Canvas.js
+  dom/ContentLoaded.js
+  dom/KeyPress.js
+  dom/StyleSheet.js
+  dom/EventListener.js
+  dom/condense.js
+  dom/sizzle.js
+  dom/LocalStorage.js
+  # Define global (window) 'js' object (last for performance)
+  global.js
+}

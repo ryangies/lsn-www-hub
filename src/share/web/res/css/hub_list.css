@@ -1,0 +1,81 @@
+dl.nlist, dl.nlist * {
+  cursor:default;
+}
+dl.nlist, dl.nlist dl {
+  padding:0;
+  margin:0
+}
+dl.nlist div.tgl {
+  float:left;
+  margin:0;
+  width:[#tglico.sz]px;
+  height:[#tglico.sz]px;
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+dl.nlist .canexp {
+  background-image: url([#canexp.img]);
+  cursor:pointer;
+}
+dl.nlist .isexp {
+  background-image: url([#isexp.img]);
+  cursor:pointer;
+}
+dl.nlist .empty {
+  background-image: url([#isempty.img]);
+  cursor:default;
+}
+dl.nlist img.ico {
+  vertical-align:top;
+}
+dl.nlist a.name {
+  margin-left:.5em;
+}
+dl.nlist dd {
+  clear:both;
+  margin:0 0 0 [#tglico.sz]px;
+  background-image: url([#vertline.img]);
+  background-repeat: repeat-y;
+}
+dl.nlist dt {
+  white-space:nowrap;
+  margin:0;
+  border-width:1px 1px 1px 1px;
+  border-style:solid;
+  border-color:transparent;
+  _border-color:white;
+}
+dl.nlist dt.sel {
+  background-color:[#sel.color];
+  border-color:[#sel-border.color];
+}
+dl.nlist dt.hl a,
+dl.nlist dt.hl li {
+  text-decoration:underline;
+}
+dl.nlist dt a {
+  margin-left:.2em;
+}
+dl.nlist dt {
+  position:relative;
+}
+dl.nlist dt ul {
+  position:absolute;
+  width:90%;
+  right:10px;
+  margin:0;
+  padding:0;
+}
+
+__DATA__
+
+sel.color => #cde
+sel-border.color => #abc
+hl.color => #9ab
+line.sz => 18
+tglico.sz => 16
+canexp.img => /res/icons/16x16/nodes/canexp.png
+isexp.img => /res/icons/16x16/nodes/isexp.png
+isempty.img => /res/icons/16x16/nodes/isempty.png
+#vertline.img => /res/icons/16x16/nodes/bgleft.png
+vertline.img => 

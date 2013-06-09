@@ -1,0 +1,19 @@
+#popup-btn-close {
+  position:absolute;
+  right:-14px;
+  top:-14px;
+  width:24px;
+  height:24px;
+  display:block;
+}
+#popup-btn-close img { display:block; }
+#popup-content-area { position:relative; text-align:left; }
+#popup-content-area {
+  display:inline-block;
+  padding:10px;
+  background-color:[#box-background || 'white'];
+  [#:for (pre) in ('-moz-', '-webkit-', '')]
+  [#pre]border-radius: 5px;
+  [#pre]box-shadow: 2px 2px 3px [#box-border || 'black'];
+  [#:end for]
+}

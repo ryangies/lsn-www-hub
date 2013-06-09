@@ -1,0 +1,59 @@
+[#:comment]
+
+  This will display an upload dialog.  A hub controller (ecma.hub.Controller)
+  and a target node (ecma.hub.Node) must be provided:
+
+    new js.lsn.Dialog('/res/lsn/dlg/upload.html').show({
+      'hub':Hub,
+      'node':node
+    });
+
+[#:end comment]
+
+[#:into ./base.html]
+<iframe id="iframe[#UID]" frameborder="0"></iframe>
+<div id="progress[#UID]"></div>
+<div id="to[#UID]"><h1 class="dialog-title">Save as</h1>[#./create.html]</div>
+[#:end into]
+
+[#:css]
+#iframe[#UID] {border:none;margin:0;padding:0;width:28em;height:2.5em;visibility:hidden;}
+#progress[#UID] {position:absolute;top:0;left:0;margin:.8em 1.5em;border:none;
+  padding:0;}
+#to[#UID] {display:none;}
+.dialog-title {}
+[#:end css]
+
+[#:js src=`./js/Upload.js`]
+
+[#:js]
+var upl[#UID];
+[#:end js]
+
+[#:js event='dialog, ok']
+  upl[#UID].upload();
+[#:end js]
+
+[#:js event='dialog, load']
+  upl[#UID] = new js.lsn.dlg.Upload(this, {
+    iframe: js.dom.getElement('iframe[#UID]'),
+    progress: js.dom.getElement('progress[#UID]'),
+    to: js.dom.getElement('to[#UID]'),
+    name: js.dom.getElement('name[#UID]'),
+    btnOk: js.dom.getElement('btn_[#UID]_ok'),
+    btnCancel: js.dom.getElement('btn_[#UID]_cancel')
+  });
+[#:end js]
+
+[#:js event='dialog, ready']
+  js.dom.getElement('iframe[#UID]').src = "[#`./upload_frame.html`]";
+[#:end js]
+
+[#:js event='dialog, hide']
+  js.dom.setStyle('iframe[#UID]', 'visibility', 'hidden');
+  upl[#UID].stopMonitor();
+[#:end js]
+
+__DATA__
+
+title => Upload a file from your computer

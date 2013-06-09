@@ -1,0 +1,13 @@
+[#:into ./base.html]
+[#./to.html]
+
+[#:js event='dialog, ok']
+  var dlg = this;
+  var srcAddr = dlg.params.node.addr;
+  var destAddr = dlg.getNewAddress();
+  dlg.params.hub.copy(srcAddr, destAddr);
+[#:end js]
+
+__DATA__
+
+title => Copy to

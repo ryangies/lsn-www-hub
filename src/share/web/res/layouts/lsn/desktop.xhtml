@@ -1,0 +1,15 @@
+[#:js src='/res/desktop/Desktop.js']
+[#:css src='/res/desktop/styles.css']
+
+[#:into ./basic.xhtml as body]
+<div id="all-tabs">
+  <ul class="tabs" id="rh-tabs"></ul>
+  <ul class="tabs" id="lh-tabs"></ul>
+</div>
+<div id="workspace"></div>
+[#:end into]
+
+[#:js]
+var Desktop = new Desktop();
+Event.observe(window, 'resize', Desktop.resize);
+[#:end js]

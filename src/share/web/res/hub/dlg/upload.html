@@ -1,0 +1,13 @@
+[#:into ./frame.ht _title='Upload' _subtitle='']
+[#:css]
+.dlgframe #uplarea iframe.uplframe {
+  border:0;margin:0;padding:0;
+  width:380px;
+  height:30px;
+}
+[#:end css]
+[#:set _ctrls1]
+<dt>File to upload:</dt>
+<dd id="uplarea"></dd>
+[#:end set]
+[#./create.ht _replace=1]

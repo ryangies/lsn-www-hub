@@ -1,0 +1,70 @@
+[#:use ./colors.hf]
+
+[#/res/css/xbrowser.css]
+
+[#./js.css]
+
+html {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  background-color: [#bg_body];
+  color: [#color_body];
+  padding: 0px;
+  margin: 0px;
+  font-size: 10pt;
+}
+
+a.lsn {
+  color:[#color1];
+  text-decoration:none;
+  cursor:pointer;
+}
+
+a.lsn:hover {
+  color:[#color3];
+  text-decoration:underline;
+}
+
+[#:comment]
+form {
+  padding: 0px;
+  margin: 0px;
+}
+
+input, textarea, select {
+  background-color: [#bg_light];
+  color: [#color_body];
+}
+
+legend {
+  position: absolute;
+  top: -.5em;
+  left: .2em;
+}
+
+button {
+  color: [#color3];
+  background-color: [#bg_body];
+  border-width: 1px 1px 1px 4px;
+  border-color: [#color2];
+  border-style: solid;
+  margin: 0 3px 0 0;
+  width:auto;
+  padding:0;
+  overflow:visible;
+  cursor:pointer;
+  font-size: 10pt;
+}
+
+button[disabled] {
+  padding: 0;
+  color: [#bg_dark];
+  background-color: [#bg_light];
+  border-width: 1px 1px 1px 4px;
+  border-color: [#bg_dark];
+  border-style: solid;
+}
+[#:end comment]

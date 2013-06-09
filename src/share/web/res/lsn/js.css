@@ -1,0 +1,44 @@
+[#:use ./colors.hf]
+#lsn_mask,
+#lsn_mask iframe {
+  top: 0;
+  left: 0;
+  background-color: [#mask];
+  position: absolute;
+  z-index: 101;
+  width:100%;/*must have for any big value*/
+  height:100%;/*must have for any big value*/;
+}
+
+/* Fix for misbehaving mask in ie5.5/6 with select boxes.*/
+#lsn_mask iframe {
+  display:none;/*sorry for IE5*/ 
+  display/**/:block;/*sorry for IE5*/
+  position:absolute;/*must have*/
+  top:0;/*must have*/
+  left:0;/*must have*/
+  z-index:-1;/*must have*/
+  filter:mask();/*must have*/
+  width:100%;/*must have for any big value*/
+  height:100%;/*must have for any big value*/;
+}
+
+#lsn_status {
+  position: absolute;
+  background-color: [#mask];
+  border: 1px solid [#bg_dark];
+  padding: 2em 4em 2em 4em;
+  z-index: 104;
+}
+
+#lsn_trace_box {
+  position: absolute;
+  background-color: [#mask];
+  border: 1px solid [#bg_dark];
+  padding: 5px;
+  z-index: 103;
+  overflow: auto;
+  height: 150px;
+  width: 350px;
+  font-size: smaller;
+}

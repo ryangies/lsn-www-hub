@@ -1,0 +1,68 @@
+# HashFile 2.1
+#
+# THIS IS A DRAFT
+#
+# Definition of fields used as input controls.
+# 
+# js.lsn.forms.*
+#
+name_field => label
+fields => @{
+  %{
+    name => name
+    label => Field Name
+    type => text
+  }
+  %{
+    name => label
+    label => Label
+    type => select
+    options => %{
+      text => Text (default)
+      select => Option List
+      textarea => Text Area
+      hidden => Hidden
+      integer => Integer
+      number => Number
+    }
+  }
+  %{
+    name => value
+    label => Default Value
+    type => text
+  }
+  %{
+    name => options
+    label => Options (for type=select|radio|checkbox)
+  }
+  %{
+    name => validate
+    label => Validation Criteria
+    spec => %{
+      fields => @{
+        %{
+          name => min_len
+          label => Minimum required length (chars) of value
+          type => integer
+        }
+        %{
+          name => max_len
+          label => Maximum allowed length (chars) of value
+          type => integer
+        }
+        %{
+          name => match
+          label => Case-sensitive regular expression
+        }
+        %{
+          name => imatch
+          label => Case-insensitive regular expression
+        }
+      }
+    }
+  }
+}
+new_item => %{
+  name => field-name
+  label => New Field
+}

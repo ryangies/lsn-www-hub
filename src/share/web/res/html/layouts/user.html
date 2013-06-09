@@ -1,0 +1,12 @@
+[#:into './basic.xhtml' as 'body']
+[#:html:head 'css' src='/web/css/styles.css']
+[#:html:head 'css']
+#user-div { position: absolute; top: 0; right: 5px; }
+[#:end html:head]
+<div id="user-div">
+[#/user/real_name] (<a href="/Action-Logout?href=/">Logout</a>)
+</div>
+[#/web/html/header.html]
+[#CONTENT]
+[#/web/html/footer.html]
+[#:end into]

@@ -1,0 +1,78 @@
+<div id="[#UID2]">
+<textarea id="[#UID2]ta" autocomplete="off" readonly="readonly"></textarea><br/>
+<button id="[#UID2]btn" onclick="[#UID2]tgl()">Hide Console</button>
+</div>
+
+[#:css]
+#[#UID2] {
+  position: fixed;
+  bottom: 10px; right: 10px;
+  z-index: 200;
+  text-align: right;
+}
+#[#UID2]ta {
+  width: 200px;
+  height: 200px;
+  font-size: smaller;
+  background: #def;
+  visibility: hidden;
+}
+[#:end css]
+
+[#:js -global]
+
+/** @namespace console */
+ECMAScript.Extend('console', function (ecma) {
+
+  /**
+   * @class TextArea
+   * Append log messages to an html textarea
+   */
+  this.TextArea = function (elem) {
+    this.ta = ecma.dom.getElement(elem);
+    ecma.dom.setValue(this.ta, '');
+  };
+
+  this.TextArea.prototype.log = function (msg) {
+    // Use ownerDocument to create nodes as the console may be on a different 
+    // window.
+    var v = js.dom.getValue(this.ta);
+    v += msg + "\r\n";
+    js.dom.setValue(this.ta, v);
+    this._scroll();
+  };
+
+  this.TextArea.prototype.trace = function () {
+    this.log('[TODO stack trace]');
+    this._scroll();
+  };
+
+  this.TextArea.prototype._scroll = function () {
+    this.ta.scrollTop = this.ta.scrollHeight;
+  };
+
+});
+
+js.dom.addEventListener(js.document, 'load', function () {
+  js.console.tee(new js.console.TextArea('[#UID2]ta'));
+  [#UID2]tgl();
+});
+
+function [#UID2]tgl () {
+  var ta = js.dom.getElement('[#UID2]ta');
+  var btn = js.dom.getElement('[#UID2]btn');
+  var vis = js.dom.getStyle(ta, 'visibility');
+  if (vis == 'hidden') {
+    //var vp = js.dom.getViewportPosition();
+    js.dom.setStyle(ta, 'visibility', 'visible');
+    //js.dom.setStyle(ta, 'width', (vp.width - 20) + 'px');
+    js.dom.setStyle(ta, 'height', '20em');
+    btn.innerHTML = 'Hide Console';
+  } else {
+    js.dom.setStyle(ta, 'visibility', 'hidden');
+    js.dom.setStyle(ta, 'width', '0');
+    js.dom.setStyle(ta, 'height', '0');
+    btn.innerHTML = 'Show Console';
+  }
+}
+[#:end js]

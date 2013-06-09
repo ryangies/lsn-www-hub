@@ -1,0 +1,569 @@
+# HashFile 2.1
+defs => @{
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Package definition and extension manager for ECMA scripts. This 
+      }
+      @{
+        *
+        implementation considers each package to be an instantiable component
+      }
+      @{
+        *
+        that is provided a pointer back to the library instance for which it is 
+      }
+      @{
+        *
+        being created.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Each library instance may operate upon separate window and document 
+      }
+      @{
+        *
+        objects.  Packages may contain local private variables, classes, and 
+      }
+      @{
+        *
+        functions.  Namespaces are extendable, allowing the end product to avoid 
+      }
+      @{
+        *
+        naming collisions.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        The ECMAScript package contains minimal code, just enough to provide:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        1. A method for creating and extending namespaces with your own packages:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ L<ECMAScript.Extend>('namespace', package);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        2. A way to create new library instances which act upon target windows and 
+      }
+      @{
+        *
+        their documents:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var js = new L<ECMAScript.Class>(window, document);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ECMAScript does not implement any namespaces itself and can be used to build
+      }
+      @{
+        *
+        a library from the ground up.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => ECMAScript
+    type => global
+    id => ECMAScript
+    depth => 1
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        About message is a semi-colon delimited string of informational fields,
+      }
+      @{
+        *
+        which take the form:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ <name>;<version>;<packages>
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Where:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ <name>        Common name for this library
+        }
+      }
+      @{
+        *
+        ${
+ <version>     Numeric version to three decimal places
+        }
+      }
+      @{
+        *
+        ${
+ <packages>    Comma-delimited string of package namespaces
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Example output:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ ECMAScript;0.004;lang,util,crypt,console,data,http,dom
+        }
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => About
+    type => function
+    id => ECMAScript.About
+    depth => 2
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Construct a new library instance.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ @param window   <HTMLWindowElement>   Only requried/used with HTML-DOM JavaScript
+        }
+      }
+      @{
+        *
+        ${
+ @param document <HTMLDocumentElement> Only requried/used with HTML-DOM JavaScript
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var js = new ECMAScript.Class(window, document);
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => Class
+    type => class
+    id => ECMAScript.Class
+    depth => 2
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Extend (or define) a top-level ECMAScript namespace, i.e., extend the
+      }
+      @{
+        *
+        library by either adding to or creating a package.  Extensions will be
+      }
+      @{
+        *
+        applied to all running instance, allowing one load additional packages
+      }
+      @{
+        *
+        on demand.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ @param namespace    <String>    e.g., 'util', 'com', 'org.gnu'
+        }
+      }
+      @{
+        *
+        ${
+ @param constructor  <Function>  See "Package Constructor Function" below
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        =
+        ${
+ ECMAScript.Extend('util', function (ecma) {         // namespace 'util'
+        }
+      }
+      @{
+        =
+        ${
+  
+        }
+      }
+      @{
+        =
+        ${
+   this.say = function (message) {                   // public function
+        }
+      }
+      @{
+        =
+        ${
+     alert(message);
+        }
+      }
+      @{
+        =
+        ${
+   \}
+        }
+      }
+      @{
+        =
+        ${
+
+        }
+      }
+      @{
+        =
+        ${
+ \});
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        The code above specifies the namespace 'util' which is extended (or 
+      }
+      @{
+        *
+        defined if it has not been). This function is now available as:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ js.util.say('Hello World');
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        \#
+        Package Constructor Function
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        The package constructor function is passed a reference to the library 
+      }
+      @{
+        *
+        instance L<ECMAScript.Class> which is creating it.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Rather than using function prototypes, the package constructor function
+      }
+      @{
+        *
+        defines its methods in the function body.  This creates closures which
+      }
+      @{
+        *
+        brings the current ECMAScript library instance (arguments[0]) in to scope
+      }
+      @{
+        *
+        and also allows the package to have private member variables.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ ECMAScript.Extend('util', function (ecma) {
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+   var _err = "Message is undefined";                // private var
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+   this.say = function (message) {
+        }
+      }
+      @{
+        *
+        ${
+     if (!message) {
+        }
+      }
+      @{
+        =
+        ${
+       ecma.console.log(_err);                       // ecma is used
+        }
+      }
+      @{
+        *
+        ${
+     \} else {
+        }
+      }
+      @{
+        *
+        ${
+       alert(message);
+        }
+      }
+      @{
+        *
+        ${
+     \}
+        }
+      }
+      @{
+        *
+        ${
+   \};
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ \});
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        This constructor pattern is necessary for scoping, i.e., allowing access to the
+      }
+      @{
+        *
+        current ECMAScript library instance.  Creating these closures does not 
+      }
+      @{
+        *
+        create a critical memory hole because these are singleton packages in
+      }
+      @{
+        *
+        respect to the number of running documents.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        This constructor pattern is not required, any constructor function will work. It is only
+      }
+      @{
+        *
+        neccessary if you use the window or document objects (DOM).
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => Extend
+    type => function
+    id => ECMAScript.Extend
+    depth => 2
+  }
+}

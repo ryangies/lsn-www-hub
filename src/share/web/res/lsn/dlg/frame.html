@@ -1,0 +1,73 @@
+[#:css]
+#dlgframe[#UID] {
+  position: absolute;
+  z-index: 102;
+  visibility:hidden;
+  top:0;
+  left:0;
+  padding:0;
+  margin:0;
+  font-family:sans-serif;
+  font-size:10pt;
+}
+#dlghead[#UID],
+#dlgbody[#UID] {
+  position:relative;
+  padding:.5em;
+}
+#dlgbody[#UID] {
+  color: #444;
+  overflow: auto; /* Allows input cursor to display in FF. */
+}
+.dialog-title {
+  color: #333;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+.dialog-subtitle {
+  color: #444;
+  font-weight: normal;
+  font-size: .8em;
+  padding-left:.5em;
+}
+[#:end css]
+
+[#:js]
+var dlg[#UID];
+[#:end js]
+
+[#:js event='dialog, ready']
+dlg[#UID] = this;
+[#:if position eq 'below']
+  if (this.params.target) {
+    var t = js.dom.getBottom(this.params.target);
+    var l = js.dom.getLeft(this.params.target);
+    js.dom.setStyle('dlgframe[#UID]', 'top', t + 'px');
+    js.dom.setStyle('dlgframe[#UID]', 'left', l + 'px');
+  }
+[#:else]
+  js.dom.setPosition('dlgframe[#UID]', {'position': "[#position || 'top-third']"});
+[#:end if]
+js.dom.setStyle('dlgframe[#UID]', 'visibility', 'visible');
+[#:end js]
+
+[#:js event='dialog, hide']
+js.dom.setStyle('dlgframe[#UID]', 'visibility', 'hidden');
+[#:end js]
+
+<div id="dlgframe[#UID]">
+[#:into ./images/index.html]
+  [#:if title]
+  <div id="dlghead[#UID]" class="dialog-title"
+    onmousedown="js.lsn.setMoveTarget(event, 'dlgframe[#UID]')"
+    onmouseover="this.style.cursor = 'move'">
+    [#title]
+    [#:if subtitle]<div class="dialog-subtitle">[#subtitle]</div>[#:end if]
+  </div>
+  [#:end if]
+  <div id="dlgbody[#UID]">
+    [#CONTENT]
+  </div>
+  <!--[if lte IE 6.5]><iframe width="0" height="0" src="about:blank"></iframe><![endif]-->
+[#:end into]
+</div>

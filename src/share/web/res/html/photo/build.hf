@@ -1,0 +1,9 @@
+# HashFile 2.1
+copyright => Livesite (c) Livesite Networks, LLC 2010.
+target => ./scripts.js
+name => Livesite Image Viewer
+version => .001
+files => @{
+  Viewer.js
+  Image.js
+}

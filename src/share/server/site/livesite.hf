@@ -1,0 +1,109 @@
+# HashFile 2.1
+sys_tmp_dir => [#dir-vhost-root]/[#domain]/tmp
+mounts => %{
+  /res => [#dir-livesite-share]/web/res
+  /ext => [#dir-livesite-share]/web/ext
+  /desktop => [#dir-livesite-share]/web/desktop
+}
+debug => %{
+  disable_cache => 0
+  req_hist_size => 0
+  terminate_on_error => 0
+  slow_upload => 0
+  developer => 0
+}
+cache => %{
+  disable => @{
+  }
+}
+permissions => %{
+  ^/res/ => *=RVQX
+  ^/api/ => *=X
+  ^/ext/.*\.pm$ => *=x
+  ^/ext/ => *=rvqx
+  ^/desktop/.*\.pm$ => g:admins=X
+  ^/desktop/ => g:admins=RVQX *=NONE
+  ^/web/admin/ => g:admins=ALL *=NONE
+  ^/ => g:admins=ALL *=r
+}
+session => %{
+  share_http_schemes => 0
+}
+modules => %{
+  ssl => %{
+    trust_uri_scheme_header => 0
+    uri_scheme_header_name => X-URI-Scheme
+  }
+}
+handlers => %{
+  access => %{
+    forbidden => @{
+    }
+  }
+  auth => %{
+    users => [#dir-vhost-root]/[#domain]/config/users
+    password_key => password.sha1
+    timeout => +1D
+  }
+  image => %{
+#{
+    # Force watermarking of images within certain directories
+    watermark => %{
+      image => /images/watermark.png
+      paths => @{
+        /images/protected/
+      }
+    }
+#}
+  }
+  response => %{
+    ignore => @{
+      \.php$
+    }
+    minify => %{
+      css => 0
+      js => 0
+    }
+    responders => @{
+      %{
+        class => WWW::Livesite::Responders::Directory
+        typeof => directory
+      }
+      %{
+        class => WWW::Livesite::Responders::Exec
+        typeof => code
+      }
+      %{
+        class => WWW::Livesite::Responders::Standard
+        typeof_match => ^data-scalar
+      }
+      %{
+        class => WWW::Livesite::Responders::Data
+        typeof_match => ^data-(hash|array)
+      }
+      %{
+        class => WWW::Livesite::Responders::Standard
+        typeof_match => ^file-
+        uri_match => \.(ht|html?|css|js|txt|xml|css|dlg)$
+      }
+      %{
+        class => WWW::Livesite::Responders::Image
+        uri_match => \.(?i:jpe?g|gif|png)$
+        qs_match => (attach|resize)=
+      }
+      %{
+        class => WWW::Livesite::Responders::Hub
+        uri_match => ^/api/hub\b
+      }
+    }
+  }
+}
+ext => %{
+  sitemap => %{
+    addr => /web/data/sitemap.hf
+  }
+}
+parser => %{
+  bbcodes => %{
+  }
+}

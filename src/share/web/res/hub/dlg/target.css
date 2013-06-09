@@ -1,0 +1,16 @@
+.dlg-target {width:400px;}
+.dlg-target label {cursor:pointer;}
+.dlg-target dl {margin:0;}
+.dlg-target dt {padding-top:5px;}
+.dlg-target dd {margin-left:10px;padding-top:2px;}
+.dlg-target #tview {width:375px;height:150px;position:relative;overflow:auto;}
+.dlg-target #tview {border:1px inset gray;}
+.dlg-target .txtinput {border:1px inset gray;}
+.dlg-target .txtinput {width:373px;padding:.2em;}
+.dlg-target .chkinput {}
+.dlg-target .misclbl {font-size:7pt;font-style:italic;}
+.dlg-target .invalid {color:red;}
+.dlg-target .invalid {color:red;}
+.dlg-target #toaddr {font-size:smaller;margin-top:5px;overflow:hidden;height:1.5em;}
+.dlg-target #opt_replace {margin:5px 0;vertical-align:middle;}
+.dlg-target #opt_replace * {vertical-align:middle;}

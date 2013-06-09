@@ -1,0 +1,25 @@
+[#:css]
+th {
+  font-size:10pt;
+  font-weight:normal;
+  text-align:left;
+}
+th em {
+  font-size:8pt;
+}
+td {
+  width:100px;
+}
+[#:end css]
+
+[#:for (fn, data) in ./{\.hf$}]
+  <h1>[#fn]</h1>
+  <table>
+  [#:for (name,color) in data]
+    <tr>
+      <th>[#name] <em>[#color]</em></th>
+      <td class="color" style="background-color:[#color];">&nbsp;</td>
+    </tr>
+  [#:end for]
+  </table>
+[#:end for]

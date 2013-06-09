@@ -1,0 +1,79 @@
+<form>
+  <table class="form">
+    <tbody>
+      [#:for fields]
+      <tr class="[#display-class || '']">
+        <th id="label_[#id]">
+          [#:if label]
+          <label class="[#optional ? 'optional' : 'required']" for="[#id]">[#label]:</label>
+          [#:end if]
+          [#:if help.txt]
+          <div class="help">[#help.txt]</div>
+          [#:end if]
+        </th>
+        <td id="area_[#id]">
+          [#:if type eq 'select']
+          <select id="[#id]" class="[#type] [#css-class || '']">
+            [#:for "[#datasource]/list"]
+            <option [#:if value eq selected] selected="selected"[#:end if] value="[#value]">[#text]</option>
+            [#:end for]
+          </select>
+          [#:elsif type eq 'image']
+            <img class="[#type] [#css-class || '']" src="[#src.img]" border="0"/><br/>
+          [#:elsif type eq 'info']
+            <div class="[#type] [#css-class || '']">[#info.txt]</div>
+          [#:elsif type eq 'radio']
+            <input id="[#id]" type="hidden" value="[#checked]"/>
+            [#:for (value, desc) in options]
+            <input id="[#id]_[#value]" type="[#type]"
+              class="[#type] [#css-class || '']" [#:if value eq checked]checked="checked"[#:end if]
+              onclick="LSN.getElement('[#id]').value = '[#value]'"
+              name="[#id]"/><label for="[#id]_[#value]">[#desc]</label><br/>
+            [#:end for]
+          [#:elsif type eq 'hidden']
+            <input id="[#id]" type="hidden" value="[#value]"/>
+          [#:else]
+          <input id="[#id]" type="[#type]"
+            class="[#type] [#css-class || ''] [#maxlength && 'w[#maxlength]']"
+            [#maxlength && 'maxlength="[#maxlength]"']/>
+          [#:end if]
+        </td>
+      </tr>
+      [#:end for]
+    </tbody>
+  </table>
+</form>
+
+[#:js event='window, load']
+[#:for fields]
+  [#:if type !~ 'image|info']
+    Event.observe('[#id]', 'keypress', function () {
+      LSN.getElement('btn-submit').setAttribute('disabled', 'disabled');
+    });
+    Event.observe('[#id]', 'change', function () {
+      LSN.getElement('btn-submit').setAttribute('disabled', 'disabled');
+    });
+  [#:end if]
+[#:end for]
+[#:end js]
+
+[#:css]
+table.form {margin:.5em;}
+table.form th {text-align:left;font-weight:normal;width:15em;vertical-align:top;}
+table.form th div.help {padding-left: 1em;font-size:.8em;}
+table.form th div.help a {color:blue;}
+table.form td {vertical-align:top;}
+table.form th.alert {color:red;}
+table.form select.select {border:1px inset black;}
+table.form input.text {width:30em;border:1px inset black;}
+table.form input.password {width:30em;border:1px inset black;}
+table.form input.checkbox {width:1.8em;height:1.8em;}
+table.form input.w2 {width:2em;}
+table.form input.w4 {width:4em;}
+table.form input.w10 {width:10em;}
+table.form td label {cursor:pointer;}
+table.form td img.image {border:none;}
+table.form td div.info {font-size:.8em;}
+table.form label.optional {font-style:italic;}
+table.form label.required {font-weight:bold;}
+[#:end css]

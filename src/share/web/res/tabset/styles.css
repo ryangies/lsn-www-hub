@@ -1,0 +1,152 @@
+[#:use /res/palettes/lsn.hf]
+html, body {
+  margin:0;padding:0;
+  background-color: [#gray4];
+  overflow: hidden; /* prevents double-resizing when the browser inserts a v scrollbar */
+  width:100%;
+  height:100%;
+}
+
+img {
+  border:none;
+}
+
+span.tabname {
+  padding-right:4px;
+}
+
+.close-img {
+  vertical-align: top;
+  margin-left: 3px;
+}
+
+.close-img:hover {
+  background:[#red3];
+}
+
+.icon-img {
+  margin-right:3px;
+  vertical-align: text-top;
+}
+
+#gtopr {
+  position:absolute;
+  top:4px;
+  right:4px;
+}
+
+#tab-frame {
+  position:relative;
+  margin-top:10px;
+}
+
+#lh-tab-frame, #rh-tab-frame {
+  font-family:sans-serif;
+  font-size:10pt;
+  background-repeat:repeat-x;
+  background-position:0 23px;
+  background-image:url([#:html:url './images/bb.png']);
+  overflow:hidden;
+  display:block;
+  position:absolute;
+  height:25px;
+  z-index:1;
+}
+
+#lh-tab-frame {
+  [#:if orientation eq 'ltr']left[#:else]right[#:end if]:0;
+}
+
+#rh-tab-frame {
+  [#:if orientation eq 'ltr']right[#:else]left[#:end if]:0;
+}
+
+#lh-tabs, #rh-tabs {
+  position:absolute;
+  top:0;
+  padding:0;
+  margin:0;
+}
+
+#tab-frame .tabset {
+  position:absolute;
+  list-style:none;
+  padding:0;
+  margin:0;
+  z-index:2;
+}
+
+#outer {
+  margin: 0 2px 0 2px;
+  cursor:pointer;
+  position:relative;
+  white-space:nowrap;
+}
+
+.sel {
+  background:[#white];
+}
+
+.inner {
+  position:relative;
+  padding: 4px;
+}
+
+.tab {
+  float:left;
+  white-space:nowrap;
+  padding:0;
+  margin:0;
+  _width:1%;
+}
+
+#workspace {
+  border:0; margin:0; padding:0;
+  background:[#white];
+  z-index:0;
+}
+
+#hsplit {
+  width: [#hsplit.sz]px;
+  position: absolute;
+  background: repeat-y center url([#:html:url './images/hsep.png']) [#gray4];
+  cursor: e-resize;
+}
+
+#workspace iframe {
+  position: absolute;
+  border: none;
+}
+
+.al {
+  left:0px;
+}
+
+.ar {
+  right:0px;
+}
+
+.btl { background: no-repeat top left url([#:html:url './images/btl.png']); }
+.bt  { background: repeat-x  top url([#:html:url './images/bt.png']); }
+.btr { background: no-repeat top right url([#:html:url './images/btr.png']); }
+.bl  { background: repeat-y  left url([#:html:url './images/bl.png']); }
+.br  { background: repeat-y  right url([#:html:url './images/br.png']); }
+
+#lh-tab-nav, #rh-tab-nav {
+  position: absolute;
+  width: [#tabnav.sz]px;
+}
+
+#lh-tab-nav img, #rh-tab-nav img {
+  cursor:pointer;
+}
+
+#lh-tab-nav img.hidden, #rh-tab-nav img.hidden {
+  visibility:hidden;
+}
+
+__DATA__
+line.sz => 1
+hsplit.sz => 5
+tabnav.sz => 16
+orientation => ltr

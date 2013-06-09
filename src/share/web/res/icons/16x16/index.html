@@ -1,0 +1,42 @@
+[#:into '/res/layouts/xhtml+lsn']
+[#:js src = '/res/js/lsn-adaptors.js']
+
+[#:js]
+
+  var layout = new js.lsn.layout.ViewportLayout();
+  layout.addRow('iconList');
+  layout.addRow('iconDetails', 80);
+
+[#:end js]
+[#:js event='window,load']
+
+  js.dom.addElementListener('a[rel="icon"]', 'click', function (event, element) {
+    js.dom.stopEvent(event);
+    var href = js.dom.getAttribute(element, 'href');
+    js.dom.setValue('details', href);
+  });
+
+[#:end js]
+
+<div class="iconList">
+  [#:for (dirname, dir) in "./{-d}"]
+  <h1>[#dirname]</h1>
+  [#:for (filename,icon) in "dir/*.png"]
+  [#:set addr='[#:finfo:addr icon]']
+  <a rel="icon" href="[#addr]">[#:html:image addr]</a>
+  [#:end for]
+  [#:end for]
+</div>
+
+<div id="details" class="iconDetails">
+</div>
+
+[#:css]
+div.iconList {overflow:auto;}
+div.iconDetails {};
+dl.iconBox {line-height:1.2em;}
+dl.iconBox dt {height:1.2em;float:left;width:100px;text-align:right;clear:left;}
+dl.iconBox dd {height:1.2em;margin:0 0 0 120px;}
+dl.iconBox a {display:block;}
+dl.iconBox a img {border:none;}
+[#:end css]

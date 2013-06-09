@@ -1,0 +1,6 @@
+[#:for (ctx,idx,p) in ./lorem-ipsum.html/paras]
+[#p][#:if ctx/number < ctx/length]
+
+
+[#:end if]
+[#:end for]

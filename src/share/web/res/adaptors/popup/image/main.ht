@@ -1,0 +1,32 @@
+[#:js src='/res/js/livesite.js']
+[#:js src=`./local.js`]
+
+<div id="viewimgPreload">
+  [#:into ./box/main.ht]
+  <div id="viewimgArea">
+    <div id="viewimgHeader">
+      <div id="viewimgButtons">
+        <a href="#close" rel="action" title="Close">[#:html:image `./btn_close.gif` border='0' alt='Close']</a>
+      </div>
+      <div id="viewimgTitle" class="heading"></div>
+    </div>
+    <div id="viewimgImage"></div>
+  </div>
+  [#:end into]
+</div>
+
+[#:css]
+#viewimgPreload { display: none; }
+#viewimgArea { position:relative; }
+#viewimgImage { text-align: center; }
+#viewimgImage img { margin: 0 auto; display: block; }
+#viewimgHeader { position:relative; margin-bottom:6px; }
+#viewimgTitle { text-align: left; }
+#viewimgButtons { position:absolute; right:0; height:20px; }
+#viewimgButtons a:focus { outline: none; }
+#viewimgButtons a img { display: block; }
+[#:end css]
+
+[#:js event='window,load']
+js.lsn.adaptors.popup.image.attachImageLinks('thumb');
+[#:end js]

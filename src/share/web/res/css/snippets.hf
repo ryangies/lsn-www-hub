@@ -1,0 +1,35 @@
+# HashFile 2.1
+linear-gradient => <<__end
+[#:set c0=color0 || 'black']
+[#:set c1=color1 || 'white']
+[#:set p0=0]
+[#:set p1=100]
+  background: [#c1];
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,[#c0]), color-stop([#p1]%,[#c1]));
+  [#:for (pre) in ('-moz-', '-webkit-', '-o-', '')]
+  background: [#pre]linear-gradient(top,  [#c0] 0%, [#c1] [#p1]%);
+  [#:end for]
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='[#c0]', endColorstr='[#c1]',GradientType=0 );
+__end
+box-shadow => <<__end
+[#:set x=offsetX || '0px']
+[#:set y=offsetY || '0px']
+[#:set b=blur || '1px']
+[#:set c=color || 'black']
+[#:set s=style || '']
+[#:join '']
+  [#:for (pre) in ('-moz-', '-webkit-', '')]
+  [#pre]box-shadow:[#x] [#y] [#b] [#c] [#s];
+  [#:end for]
+[#:end join]
+__end
+rotate => <<__end
+[#:set o=origin || 'bottom left']
+[#:set d=deg || '0']
+[#:join '']
+  [#:for (pre) in ('-moz-', '-webkit-', '-ms-', '')]
+  [#pre]transform:rotate([#d]deg); 
+  [#pre]transform-origin:[#o];
+  [#:end for]
+[#:end join]
+__end

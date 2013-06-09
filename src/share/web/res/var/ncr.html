@@ -1,0 +1,8 @@
+[#:into /res/layouts/xhtml]
+<table>
+  <tbody>
+  [#:for (num) in (1 .. 255)]
+    <tr><th>[#num]</t><td>&#[#num];</td></tr>
+  [#:end for]
+  </tbody>
+</table>

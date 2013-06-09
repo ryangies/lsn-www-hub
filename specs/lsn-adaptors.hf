@@ -1,0 +1,13 @@
+# HashFile 2.1
+builder => ecma
+copyright => Livesite (c) Livesite Networks, LLC 2006-2013.
+working_dir => ${LSN_SRC_ROOT}/lsn-javascript/src/lib/ecma
+target => ../src/share/web/res/js/lsn-adaptors.js
+name => Runtime DOM adaptors
+version => .001
+files => @{
+  lsn/dom/ElementListener.js
+  lsn/dom/ElementAdaptor.js
+  lsn/dom/ActionAdaptor.js
+  lsn/dom/adaptors.js
+}

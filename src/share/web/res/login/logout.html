@@ -1,0 +1,4 @@
+[#:http:no-cache]
+[#./module.pm/logout]
+[#:set location = :cgi('location') || '/']
+[#:http:header 'Location' location]

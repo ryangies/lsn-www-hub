@@ -1,0 +1,53 @@
+#!/usr/bin/perl -w
+use strict;
+use Data::Hub qw($Hub);
+use Data::Hub::Util qw(:all);
+use Parse::Template::Debug::Debugger;
+use Data::Hub::FileSystem::Node;
+
+sub usage {
+  my $name = path_name($0);
+  print STDOUT <<__EOF;
+usage:
+  $name -help
+  $name path [options]
+path:
+  Path of the template to compile
+options:
+  -conf       Path to livesite config file (e.g., ../config/livesite.hf)
+  -class      Parser class (Parse::Template::___) default is 'Web'
+  -debug|-d   Interactive [command-line] debugger
+__EOF
+}
+
+if ($Hub->{'/sys/OPTS/help'}) {
+  usage();
+  exit 0;
+}
+
+my $Conf = $$Hub{'/sys/OPTS/conf'};
+my $Parser_Class = $$Hub{'/sys/OPTS/class'} || 'Web';
+my $Debug = $$Hub{'/sys/OPTS/debug'} || $$Hub{'/sys/OPTS/d'};
+my $Argv = $Hub->{'/sys/ARGV'};
+my $Filename = shift @$Argv or die "Please provide a filename\n";
+my $Out = '';
+my $Addr = $Hub->path_to_addr($Filename);
+
+if (defined $Conf && -e $Conf) {
+  $Hub->{'/sys/conf'} = Data::Hub::FileSystem::Node->new($Conf);
+  if ($Hub->{'/sys/conf/mounts'}) {
+    $Hub->{'/sys/conf/mounts'}->iterate(sub{
+      $Hub->mount(shift, shift);
+    });
+  }
+}
+
+eval {require "Parse/Template/$Parser_Class.pm"};
+die $@ if $@;
+my $p = "Parse::Template::$Parser_Class"->new($Hub, -out => \$Out);
+Parse::Template::Debug::Debugger::attach($p) if ($Debug);
+
+$Hub->{'/sys/request/cgi'} = {@$Argv};
+
+$p->compile($Addr);
+print $Out unless $Debug;

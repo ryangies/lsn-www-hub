@@ -1,0 +1,75 @@
+/**
+ *  This file remains for backward compatibility only,
+ *  use /res/lsn/common.css instead.
+ */
+
+[#./xbrowser.css]
+body {
+  background-color: [#bg_body];
+  color: [#color_body];
+  padding: 0px;
+  margin: 0px;
+  font-size: 10pt;
+}
+
+a {
+  color: [#color1];
+}
+
+a:hover {
+  color: [#color2];
+}
+
+form {
+  padding: 0px;
+  margin: 0px;
+}
+
+input, textarea, select {
+  background-color: [#bg_light];
+  color: [#color_body];
+}
+
+legend {
+  position: absolute;
+  top: -.5em;
+  left: .2em;
+}
+
+button {
+  color: [#color3];
+  background-color: [#bg_body];
+  border-width: 1px 1px 1px 4px;
+  border-color: [#color2];
+  border-style: solid;
+  margin: 0 3px 0 0;
+  width:auto;
+  padding:0;
+  overflow:visible;
+  cursor:pointer;
+  font-size: 10pt;
+}
+
+button[disabled] {
+  padding: 0;
+  color: [#bg_dark];
+  background-color: [#bg_light];
+  border-width: 1px 1px 1px 4px;
+  border-color: [#bg_dark];
+  border-style: solid;
+}
+
+__DATA__
+# Background colors
+bg_body => #fff
+bg_light => #fefefe
+bg_med => #EEEEEE
+bg_dark => #DDDDDD
+#Foreground colors
+color_body => #000
+color1 => #103565
+color2 => #16498C
+color3 => #1D5EB3
+#Special Colors
+mask => #eef
+status => #ffa

@@ -1,0 +1,52 @@
+[#:css][#./frame.css][#:end css]
+
+<div id="dlgframe[#UID]" class="dlgframe">
+
+  [#:if !_no_header]
+  <div id="dlghead" class="dlghead"
+    onmousedown="js.lsn.setMoveTarget(event, 'dlgframe[#UID]')"
+    onmouseover="this.style.cursor = 'move'">
+    <div id="dlgtitle">[#_title || '']</div>
+    <div id="subtitle" class="subtitle">[#_subtitle || '']</div>
+  </div>
+  [#:end if]
+  <div id="dlgbody[#UID]" class="dlgbody">
+    <div id="area[#UID]" class="dlgarea">
+      <div class="flow">
+        [#CONTENT]
+      </div>
+      <div id="btnbar">
+[#:if _btn_apply]
+        <button id="btn_apply" class="btn" type="button">Apply</button>
+[#:end if]
+[#:if ! _hide_cancel_button]
+        <button id="btn_cancel" class="btn" type="button">Cancel</button>
+[#:end if]
+        <button id="btn_ok" class="btn" type="button">OK</button>
+      </div>
+    </div>
+  </div>
+  <!--[if lte IE 6.5]><iframe width="0" height="0" src="about:blank"></iframe><![endif]-->
+
+</div>
+
+[#:js event='widget, load']
+function relayEvent (event, name) {
+  js.dom.stopEvent(event);
+  this.doEvent(name);
+}
+[#:if _btn_apply]
+var btnApply = this.getElementById('btn_apply');
+js.dom.addEventListener(btnApply, 'click', relayEvent, this, ['apply']);
+[#:end if]
+var btnOk = this.getElementById('btn_ok');
+js.dom.addEventListener(btnOk, 'click', relayEvent, this, ['ok']);
+[#:if ! _hide_cancel_button]
+var btnCancel = this.getElementById('btn_cancel');
+js.dom.addEventListener(btnCancel, 'click', relayEvent, this, ['cancel']);
+[#:end if]
+[#:end js]
+
+[#:js event='widget, show']
+js.dom.setPosition('dlgframe[#UID]', {'position': 'top-third'});
+[#:end js]

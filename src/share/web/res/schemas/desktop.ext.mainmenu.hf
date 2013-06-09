@@ -1,0 +1,52 @@
+# HashFile 2.1
+name_field => title
+root_subkey => modules
+fields => @{
+  %{
+    name => category
+    label => Category
+    type => select
+    options => /desktop/ext/mainmenu/metadata.hf/categories
+  }
+  %{
+    name => title
+    label => Menu title
+  }
+  %{
+    name => name
+    label => Tab Name
+  }
+  %{
+    name => desc
+    label => Short description
+#   type => html
+#   type => html:basic
+#   type => html:paras
+  }
+  %{
+    name => icon
+    label => Icon
+  }
+  %{
+    name => src
+    label => URL
+  }
+  %{
+    name => canClose
+    label => Tab can be closed?
+    type => select
+    options => %{
+      true => Yes
+      false => No
+    }
+  }
+}
+new_item => %{
+  category => custom
+  title => Name
+  name => Name
+  desc => Description
+  icon => /res/icons/16x16/actions/tab-new.png
+  src => /desktop/ext/browse/index.html
+  canClose => true
+}

@@ -1,0 +1,595 @@
+#!/usr/bin/perl -w
+package Local::Builder;
+use strict;
+use Perl::Module;
+use Data::Hub;
+use Data::Hub::Util qw(:all);
+use Data::Format::Hash qw(hf_format);
+use Parse::Template::Web;
+use Parse::Template::Standard;
+use Cwd qw(cwd);
+use File::Temp;
+
+our $Value_Parser = Parse::Template::Standard->new(
+  -begin => '${',
+  -end => '}'
+);
+
+sub new {
+  my $class = ref($_[0]) ? ref shift : shift;
+  my $self = bless {@_}, $class;
+  $self->{'targets'} = {
+    'info'    => \&target_info,
+    'all'     => \&target_all,
+    'clean'   => \&target_clean,
+  };
+  $self->parse_project();
+  $self;
+}
+
+sub resolve_rval {
+  my $self = shift;
+  my $rval = shift;
+  my $result = $Value_Parser->compile_text(\$rval,
+    $$self{'cwd'}{'/sys/ENV'},
+    @_
+  );
+  $$result;
+}
+
+=pod
+
+TODO - Properly translate rsync's PATTERN definitions into regular expressions.
+
+       You  can include and exclude files by specifying patterns using the "+", "-", etc. filter rules
+       (as introduced in the FILTER RULES section above).  The include/exclude rules  each  specify  a
+       pattern that is matched against the names of the files that are going to be transferred.  These
+       patterns can take several forms:
+
+       o      if the pattern starts with a / then it is anchored to a particular spot in the hierarchy
+              of files, otherwise it is matched against the end of the pathname.  This is similar to a
+              leading ^ in regular expressions.  Thus "/foo" would match a name of "foo" at either the
+              "root  of  the  transfer"  (for  a  global rule) or in the merge-file’s directory (for a
+              per-directory rule).  An unqualified "foo" would match a name of "foo" anywhere  in  the
+              tree  because  the  algorithm is applied recursively from the top down; it behaves as if
+              each path component gets a turn at being the end of the filename.  Even  the  unanchored
+              "sub/foo"  would  match  at  any point in the hierarchy where a "foo" was found within a
+              directory named "sub".  See the section on ANCHORING INCLUDE/EXCLUDE PATTERNS for a full
+              discussion of how to specify a pattern that matches at the root of the transfer.
+
+       o      if  the  pattern  ends with a / then it will only match a directory, not a regular file,
+              symlink, or device.
+
+       o      rsync chooses between doing a simple string match and wildcard matching by  checking  if
+              the pattern contains one of these three wildcard characters: ’*’, ’?’, and ’[’ .
+
+       o      a ’*’ matches any path component, but it stops at slashes.
+
+       o      use ’**’ to match anything, including slashes.
+
+       o      a ’?’ matches any character except a slash (/).
+
+       o      a ’[’ introduces a character class, such as [a-z] or [[:alpha:]].
+
+       o      in a wildcard pattern, a backslash can be used to escape a wildcard character, but it is
+              matched literally when no wildcards are present.
+
+       o      if the pattern contains a / (not counting a trailing /) or a "**", then  it  is  matched
+              against  the  full  pathname,  including any leading directories. If the pattern doesn’t
+              contain a / or a "**", then it is matched only against the final component of the  file‐
+              name.   (Remember that the algorithm is applied recursively so "full filename" can actu‐
+              ally be any portion of a path from the starting directory on down.)
+
+       o      a trailing "dir_name/***" will match both the directory  (as  if  "dir_name/"  had  been
+              specified)  and  everything  in  the directory (as if "dir_name/**" had been specified).
+              This behavior was added in version 2.6.7.
+
+=cut
+
+sub rsync_pattern_to_regex {
+  my $self = shift;
+  my $rsync_pattern = shift or die "empty pattern!";
+  my $regex = $rsync_pattern;
+  $regex =~ s/\./\\./g;
+  $regex =~ s/\*/.*/g;
+  $regex = index($rsync_pattern, '*') == 0
+    ? qr/${regex}$/
+    : qr/\b${regex}\b/;
+  $$self{'console'}->verbose("Pattern to regex: %s -> %s\n", $rsync_pattern, $regex);
+  $regex;
+}
+
+sub parse_project {
+  my $self = shift;
+  my $proj =  curry(clone($$self{'project_file'}, -keep_order => 1));
+  my $overlays = delete $$proj{'overlays'};
+  if (my $overlay = $$self{'cwd'}{'/sys/OPTS/overlay'}) {
+    overlay($proj, $$overlays{$overlay}, -keep_order => 1);
+  }
+
+  $$proj{'build_in'} ||= './build';
+  $$proj{'deploy_to'} ||= './dist';
+  $$proj{'use'} ||= [];
+
+  $$proj{'project_path'} = $$self{'cwd'}->get_fs_root->get_path;
+  $$proj{'source_path'} = path_join($$proj{'project_path'}, $$proj{'source'});
+  $$proj{'build_path'} = path_join($$proj{'project_path'}, $$proj{'build_in'}, $$proj{'name'});
+  $$proj{'deploy_path'} = path_join($$proj{'deploy_to'}, $$proj{'name'});
+
+  $proj->walk(sub {
+    my ($key, $value, $depth, $addr, $struct) = @_;
+    return if ref $value;
+    my $new_value = $self->resolve_rval($value, $proj);
+    $proj->set($addr, $new_value);
+  });
+
+  $$proj{'compile_excludes'} =
+      [map { $self->rsync_pattern_to_regex($_) } @{$$proj{'excludes'}}];
+
+  $$self{'project'} = $proj;
+}
+
+# Run external commands
+sub exec_commands {
+  my $self = shift;
+  my $dir_alias = shift or die "No working directory provided";
+  my $commands = shift or return;
+  my $dir = $$self{'project'}{$dir_alias} or die "No such property: $dir_alias";
+  die "No such directory ($dir_alias): $dir" unless -d $dir;
+  chdir $dir;
+  foreach my $command (@$commands) {
+    $$self{'console'}->verbose("Run: %s\n", $command);
+    system $command;
+  }
+  chdir $$self{'project'}{'project_path'};
+}
+
+sub run {
+  my $self = shift;
+  my @targets = ();
+  foreach my $target (@_) {
+    my $sub = $$self{'targets'}{$target} or die "Unknown target: $target";
+    $$self{'console'}->verbose("Target: %s\n", $target);
+    push @targets, $sub;
+  }
+  foreach my $sub (@targets) {
+    &$sub($self);
+  }
+}
+
+sub target_info {
+  my $self = shift;
+  print hf_format($$self{'project'}), "\n";
+}
+
+sub target_clean {
+  my $self = shift;
+  foreach my $path (
+    $$self{'project'}{'deploy_path'},
+    $$self{'project'}{'build_path'},
+  ) {
+    $$self{'console'}->danger("Remove: %s\n", $path);
+    dir_remove $path;
+  }
+  delete $$self{'build_hub'}; # semiphoric
+}
+
+sub prepare {
+  my $self = shift;
+  return if $$self{'build_hub'}; # semiphoric
+
+  # Check before creating it
+  my $build_path_exists = -e $$self{'project'}{'build_path'};
+
+  # Create output folders
+  foreach my $path (
+    $$self{'project'}{'deploy_path'},
+    $$self{'project'}{'build_path'},
+  ) {
+    $$self{'console'}->verbose("Create: %s\n", $path);
+    dir_create $path;
+  }
+
+  # Filesystem trees
+  $$self{'source_hub'} = Data::Hub->new($$self{'project'}{'source_path'});
+  $$self{'build_hub'} = Data::Hub->new($$self{'project'}{'build_path'});
+
+  # Web parser (which compiles source files)
+  $$self{'parser'} = Parse::Template::Web->new($$self{'build_hub'});
+  my @contexts = map {$$self{'cwd'}->get($_)} @{$$self{'project'}{'use'}};
+  $$self{'parser'}->use(@contexts) if @contexts;
+
+  # Last run time (use for is-modified check)
+  $$self{'last_run_time'} = $build_path_exists
+    ? $$self{'build_hub'}->get_fs_root->get_mtime 
+    : 0;
+}
+
+sub target_all {
+  my $self = shift;
+  $self->prepare();
+  return unless $self->has_modified;
+  my $project = $$self{'project'};
+  # Copy files
+  $self->exec_commands('source_path', $project->get('exec/before_copy'));
+  $$self{'console'}->verbose("copy to temp build dir\n");
+  `rsync -a --delete "$$project{'source_path'}/" "$$project{'build_path'}/"`;
+  # Compile
+  $$self{'console'}->log("Build: %s\n", $$project{'build_path'});
+  $self->exec_commands('build_path', $project->get('exec/before_compile'));
+  $$self{'build_hub'}->expire();
+  my $excludes = $$project{'compile_excludes'};
+  my $ext = $$project{'filetypes'} || 'js|html|css';
+  foreach my $file ($$self{'build_hub'}->get("/**|{-?:=~($ext)\$}")->values) {
+    my $is_excluded = 0;
+    my $addr = $file->get_addr;
+    for (@$excludes) {
+      if ($addr =~ $_) {
+        $$self{'console'}->verbose("ignore[=~$_]: %s\n", $addr);
+        $is_excluded = 1;
+        last;
+      }
+    }
+    next if $is_excluded;
+    $$self{'console'}->verbose("Compile: %s\n", $file->get_addr);
+    my $response = Local::Response->new();
+    $$self{'build_hub'}->set('/sys/response', $response);
+    my $result = $$self{'parser'}->compile($file->get_addr);
+    $response->insert_head($result);
+    file_write($file->get_path, $result);
+  }
+  $self->exec_commands('build_path', $project->get('exec/after_compile'));
+  # Deploy
+  my $excludes_file = $self->_mktemp(join "\n", @{$$project{'excludes'}});
+  my $excludes_path = $excludes_file->filename;
+  $$self{'console'}->log("Deploy: %s\n", $$project{'deploy_path'});
+  `rsync -av --exclude-from="$excludes_path" "$$project{'build_path'}/" "$$project{'deploy_path'}/"`;
+  $self->exec_commands('deploy_to', $project->get('exec/after_deploy'));
+  $$self{'last_run_time'} = time;
+}
+
+sub has_modified {
+  my $self = shift;
+  $self->has_modified_since($$self{'last_run_time'});
+}
+
+sub has_modified_since {
+  my $self = shift;
+  my $since = shift;
+  $$self{'source_hub'}->expire();
+  foreach my $node ($$self{'source_hub'}{'/**'}->values) {
+    $$self{'console'}->verbose("mtime: %d vs %d (%s)\n",
+        $node->get_mtime,
+        $since,
+        $node->get_addr,
+        );
+    return 1 if $node->get_mtime > $since;
+  }
+  return 0;
+}
+
+sub _mktemp {
+  my $self = shift;
+  my $content = shift;
+  my $tmpdir = $$self{'project'}{'project_path'};
+  my $tmpfile = File::Temp->new(DIR => $tmpdir);
+  $tmpfile->unlink_on_destroy(1);
+  printf $tmpfile $content;
+  return $tmpfile;
+}
+
+1;
+
+# ------------------------------------------------------------------------------
+package Local::Response;
+use strict;
+use Perl::Module;
+use CSS::Minifier::XS qw();
+use JavaScript::Minifier::XS qw();
+use base qw(Data::Hub::Container);
+
+sub new {
+  my $class = ref($_[0]) ? ref shift : shift;
+  my $self = bless {@_}, $class;
+  $self;
+}
+
+sub minify_css {
+  my $self = shift;
+  my $code = shift;
+  return $$self{'minify'}{'css'}
+    ? CSS::Minifier::XS::minify($code)
+    : $code;
+}
+
+sub minify_js {
+  my $self = shift;
+  my $code = shift;
+  return $$self{'minify'}{'js'}
+    ? JavaScript::Minifier::XS::minify($code)
+    : $code;
+}
+
+sub _quote {
+  my $value = shift;
+  $value =~ s/(?<!\\)"/\\"/g;
+  '"' . $value . '"';
+}
+
+sub insert_head {
+  my $self = shift;
+  my $output = shift or return;
+  my $head_text = '';
+  if ($self->{'head'}) {
+
+    # track duplicate src links
+    my $have_linked = $self->get('head/have_linked') || {};
+
+    # CSS links
+    if ($self->get('head/links/css')) {
+      foreach my $attrs_ref (@{ $self->get('head/links/css') }) {
+        my %attrs = %$attrs_ref;
+        my $href = $attrs{'href'} or next;
+        next if $$have_linked{$href};
+        $attrs{'rel'} ||= 'stylesheet';
+        $attrs{'type'} ||= 'text/css';
+        my $attr_str = join ' ', map {$_ . '=' . _quote($attrs{$_})} sort keys %attrs;
+        $head_text .= "<link $attr_str/>\n";
+        $$have_linked{$href} = 1;
+      }
+    }
+
+    # CSS blocks
+    if ($self->get('head/css')) {
+      $head_text .= '<style type="text/css">'."\n"
+        . $self->minify_css($self->get('head/css'))
+        . '</style>'."\n";
+    }
+
+    # JavaScript links
+    if ($self->get('head/links/js')) {
+      foreach my $attrs_ref (@{ $self->get('head/links/js') }) {
+        my %attrs = %$attrs_ref;
+        my $src = $attrs{'src'} or next;
+        next if $$have_linked{$src};
+        $attrs{'type'} ||= 'text/javascript';
+        my $attr_str = join ' ', map {$_ . '=' . _quote($attrs{$_})} sort keys %attrs;
+        $head_text .= "<script $attr_str></script>\n";
+        $$have_linked{$src} = 1;
+      }
+    }
+
+    my $js_global = $self->get('head/js');
+    my $js_extend =  $self->get('head/extend/js');
+    my $js_events =  $self->get('head/events/js');
+    my $js_blocks =  $self->get('head/blocks/js');
+    my $has_js = $js_global || $js_extend || $js_events || $js_blocks;
+
+    if ($has_js) {
+      $head_text .= '<script type="text/javascript">/*<![CDATA[*/'."\n";
+
+      # JavaScript extend blocks
+      if ($js_extend) {
+        $js_extend->iterate(sub {
+          my ($ns, $code) = @_;
+          $code = $self->minify_js($code);
+          $head_text .= "js.extend('$ns',function(js){\n$code\n});\n";
+        });
+      }
+
+      # JavaScript closure blocks
+      if ($js_blocks) {
+        $js_blocks->iterate(sub {
+          my ($idx, $code) = @_;
+          $code = $self->minify_js($code);
+          $head_text .= "(function(){\n$code\n})();\n";
+        });
+      }
+
+      # JavaScript blocks
+      if ($js_global) {
+        my $code = $self->get('head/js') . "\n";
+        $head_text .= $self->minify_js($code);
+      }
+
+      # JavaScript event blocks
+      if ($js_events) {
+        $js_events->iterate(sub {
+          my ($project, $events) = @_;
+          for (@$events) {
+            my $code = $$_{'value'};
+            $code = $self->minify_js($code);
+            $head_text .=
+              "js.dom.addEventListener($project,'$$_{key}',function(event){\n$code\n});\n";
+          }
+        });
+      }
+
+      $head_text .= '/*]]>*/</script>'."\n";
+    }
+
+  }
+  # Insert
+  if ($head_text) {
+    chomp $head_text;
+    my $p = index_imatch($$output, '\s*<\s*/\s*head\s*>');
+    $p = 0 unless ($p > -1); # insert at beginning if no head element
+    substr $$output, $p, 0, "\n$head_text";
+  }
+}
+
+1;
+
+# ------------------------------------------------------------------------------
+package Local::Console;
+use strict;
+use Perl::Module;
+use Data::Hub;
+use App::Console::Color qw(c_printf);
+
+sub new {
+  my $class = ref($_[0]) ? ref shift : shift;
+  my $self = bless {@_}, $class;
+  $self;
+}
+
+sub log {
+  my $self = shift;
+  printf $_[0], $_[1], $_[2], $_[3];
+}
+
+sub verbose {
+  my $self = shift;
+  return unless $$self{'verbose'};
+  my $message = sprintf $_[0], $_[1], $_[2], $_[3];
+  c_printf "%_bs", $message;
+}
+
+sub danger {
+  my $self = shift;
+  my $message = sprintf $_[0], $_[1], $_[2], $_[3];
+  c_printf "%_rs", $message;
+}
+
+sub notice {
+  my $self = shift;
+  my $message = sprintf $_[0], $_[1], $_[2], $_[3];
+  c_printf "%_gs", $message;
+}
+
+1;
+
+# ------------------------------------------------------------------------------
+package main;
+use strict;
+use Perl::Module;
+use Data::Hub qw($Hub);
+use Data::Hub::Util qw(:all);
+
+sub usage {
+  my $name = path_name($0);
+  print STDERR <<__EOF;
+usage:
+  $name -help
+  $name [options]
+  $name target [options]
+targets:
+  all             Build and release
+  clean           Delete build and release folders
+  info            Dump the post-processed project settings
+options:
+  -overlay=name   Overlay project settings with named overlay
+  -file           Project file (default is `project.hf`)
+  -poll=1         Daemon mode, specifies sleep interval in seconds
+  -verbose        Show more information about what's happening
+__EOF
+}
+
+our $OPTS = my_opts(\@ARGV);
+
+if ($OPTS->{'help'}) {
+  usage();
+  exit 0;
+}
+
+if (!@ARGV) {
+  usage();
+  exit 0;
+}
+
+our $Verbose = $OPTS->{'verbose'} || 0;
+
+our $Console = Local::Console->new(verbose => $Verbose);
+
+our $Interval = $OPTS->{'poll'} || 0;
+
+die "Polling interval must be an integer\n"
+    if $Interval && $Interval !~ /^\d+$/;
+
+our $File = $OPTS->{'file'} || ['project.hf'];
+
+our $Build_Files = isa($File, 'ARRAY') ? $File : [$File];
+
+our @Builders = ();
+
+foreach my $project_filename (@$Build_Files) {
+
+  my $project_file = $$Hub{$project_filename}
+      or die "Project file found: $project_filename";
+
+  my $builder = Local::Builder->new(
+    console => $Console,
+    cwd => $Hub,
+    project_file => curry($project_file),
+  );
+
+  push @Builders, $builder;
+
+}
+
+sub run {
+  foreach my $builder (@Builders) {
+    $builder->run(@ARGV);
+  }
+}
+
+sub show_polling {
+  $Console->notice("[%s] Polling every %d second%s (ctrl+c to quit)\n",
+      strftime, $Interval, $Interval gt 1 ? 's' : '') if $Interval;
+}
+
+if ($Interval) {
+  my $continue = 1;
+  $SIG{'INT'} = sub {
+    print "\n";
+    $continue = 0;
+  };
+  show_polling();
+  while ($continue) {
+    run();
+    show_polling() if $Verbose;
+    sleep $Interval;
+  }
+} else {
+  run();
+}
+
+1;
+
+=pod:description
+
+    # HashFile 2.1
+    name => example-0.1
+    deploy_to => ./dist
+    build_in => ./build
+    source => ./src
+    filetypes => html|css|js
+    use => @{
+    }
+    excludes => ${
+      *.ht
+      *.hf
+      *.css
+    images/index.html
+    }
+    exec => %{
+      before_copy => @{
+        echo before_copy: $(pwd)
+      }
+      before_compile => @{
+        echo before_compile: $(pwd)
+      }
+      after_compile => @{
+        echo after_compile: $(pwd)
+      }
+      after_deploy => @{
+        echo after_deploy: $(pwd)
+      }
+    }
+    overlays => %{
+      sample => %{
+        deploy_to => /tmp/dist
+      }
+    }
+
+=cut

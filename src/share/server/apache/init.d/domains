@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# domains      Startup script for multiple Web servers
+#
+# chkconfig: - 85 15
+# description: Web servers
+# processname: domains
+
+[#:for (host) in "hosts/{?disabled(ne):1}"]
+[#:if host/vhosts && !host/forward-to-domain]
+[ -e /etc/livesite/init.d/[#host/domain] ] && /etc/livesite/init.d/[#host/domain] $@
+[#:end if]
+[#:end for]
+
+exit 0

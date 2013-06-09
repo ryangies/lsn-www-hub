@@ -1,0 +1,48 @@
+[#:http:no-cache]
+[#:into /res/hub/dlg/frame.ht _title='Authorization Required' _subtitle=/sys/server/name]
+<table>
+  <tbody>
+    <tr>
+      <td class="w1">
+        <label for="un" tabindex="-1">User name:</label>
+      </td>
+      <td align="right">
+        <input id="un" type="text" tabindex="4041"/>
+      </td>
+    </tr>
+    <tr>
+      <td class="w1">
+        <label for="pw" tabindex="-1">Password:</label>
+      </td>
+      <td align="right">
+        <input id="pw" type="password" tabindex="4042"/>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2"><div id="msg"></div></td>
+    </tr>
+  </tbody>
+</table>
+[#:end into]
+
+[#:js]
+js.lsn.auth.setAuthToken('[#./module.pm/get_nonce]');
+[#:end js]
+
+[#:css]
+#area[#UID] table {width:22em;}
+#area[#UID] th.w1 {width:7em;}
+#area[#UID] td {padding:.1em 0;}
+#area[#UID] #pw {width: 150px;border: 1px inset black;}
+#area[#UID] #un {width: 150px;border: 1px inset black;}
+#area[#UID] #msg {margin-top:.5em;}
+#area[#UID] #msg.authenticating {color:blue;}
+#area[#UID] #msg.authenticated {color:green;}
+#area[#UID] #msg.failed {color:red;}
+#dlgframe[#UID] {font-family:sans-serif;}
+[#:end css]
+
+[#:js event='widget, show']
+js.dom.setAttribute('btn_ok', 'tabindex', 4043);
+js.dom.setAttribute('btn_cancel', 'tabindex', 4044);
+[#:end js]

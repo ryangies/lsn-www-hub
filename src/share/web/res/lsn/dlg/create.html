@@ -1,0 +1,39 @@
+[#:js src=`./js/Create.js`]
+
+<div id="new[#UID]">
+  <div>
+    <img id="desticon[#UID]"/>
+    <span id="destaddr[#UID]"></span>
+  </div>
+  <div class="tmar">
+    <label for="name[#UID]">Name:</label>
+    <input id="name[#UID]" name="values/name" type="text"/>
+  </div>
+</div>
+
+[#:css]
+#new[#UID] {width:28em;}
+#destaddr[#UID] {color:#777;}
+#name[#UID] {width:24em;padding:0 .2em;}
+#list[#UID], #name[#UID] {border:1px inset gray;}
+#new[#UID] .tmar {margin-top:1em;}
+#new[#UID] .err {color:red;}
+[#:end css]
+
+[#:js]
+var dlg[#UID];
+[#:end js]
+
+[#:js event='dialog, load']
+dlg[#UID] = this;
+[#:end js]
+
+[#:js event='dialog, load']
+  js.lsn.dlg.Create.apply(this, [{
+    addr: js.dom.getElement('destaddr[#UID]'),
+    icon: js.dom.getElement('desticon[#UID]'),
+    name: js.dom.getElement('name[#UID]'),
+    btnOk: js.dom.getElement('btn_[#UID]_ok'),
+    type: "[#type || '']"
+  }]);
+[#:end js]

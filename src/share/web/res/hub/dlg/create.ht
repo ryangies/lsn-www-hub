@@ -1,0 +1,29 @@
+[#:css][#./target.css][#:end css]
+
+<div class="dlg-target" style="width:400px;">
+  <dl>
+    [#_ctrls1 || '']
+    <dt>Name:</dt>
+    <dd>
+      <input id="name" class="txtinput"/>
+      [#:if _replace]
+      <div id="opt_replace">
+        <input id="replace" class="chkinput" type="checkbox"/>
+        <label for="replace" class="misclbl">Replace existing</label>
+      </div>
+      [#:end if]
+    </dd>
+    [#_ctrls2 || '']
+  </dl>
+  <div id="toaddr"></div>
+</div>
+
+[#:js event='widget, load']
+var elem = this.getElementById('name');
+new js.dom.KeyListener(elem, 'esc', function () {this.doEvent('cancel');}, this);
+new js.dom.KeyListener(elem, 'enter', function () {
+  var btnOk = this.getElementById('btn_ok');
+  if (js.dom.getAttribute(btnOk, 'disabled')) return;
+  this.doEvent('ok');
+}, this);
+[#:end js]

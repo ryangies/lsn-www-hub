@@ -1,0 +1,14 @@
+<dl class="iconbox">
+[#:for (icon) in "./**|{?(=~):(gif|png)}"]
+  [#:set addr='[#:finfo:addr icon]']
+  <dt><a href="[#addr]">[#:html:image addr]</a></dt>
+  <dd>[#:finfo:addr icon]</dd>
+[#:end for]
+</dl>
+[#:css]
+dl.iconbox {line-height:1.2em;}
+dl.iconbox dt {height:1.2em;float:left;width:100px;text-align:right;clear:left;}
+dl.iconbox dd {height:1.2em;margin:0 0 0 120px;}
+dl.iconbox a {display:block;}
+dl.iconbox a img {border:none;}
+[#:end css]

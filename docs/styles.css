@@ -1,0 +1,33 @@
+[#:use /res/palettes/lsn.hf]
+body {font-family:sans-serif;color:[#gray1];background:[#gray3];}
+a {color:[#green1];}
+a:hover {color:[#purple2];}
+
+#doc code, pre {color:[#blue1];}
+#doc pre {padding:0 1em;margin:0;}
+#doc cite {background-color:[#yellow3];color:[#black];}
+#doc dfn {background-color:[#yellow3];}
+#doc em {color:[#orange1];}
+#doc .blk {margin-left:6px;}
+#doc .sel {margin-left:3px;border-left:3px solid [#green1];color:black;background:white;}
+#doc .d1 {padding-left:.5em;}
+#doc .d2 {padding-left:.5em;}
+#doc .d3 {padding-left:1em;}
+#doc .d4 {padding-left:1.5em;}
+#doc .d5 {padding-left:2em;}
+#doc .d6 {padding-left:2.5em;}
+#doc .d7 {padding-left:3em;}
+
+#toc a {display:block;cursor:pointer;white-space:nowrap;text-decoration:none;}
+#toc ul {margin:0;padding:0;}
+#toc li {list-style-position:inside;list-style-type:none;color:[#green2];}
+#toc li.sel {list-style:square;}
+#toc li.d1 {margin-left:0em;}
+#toc li.d2 {margin-left:.5em;}
+#toc li.d3 {margin-left:1.5em;}
+#toc li.d4 {margin-left:1.5em;}
+#toc li.d5 {margin-left:1.5em;}
+#toc li.d6 {margin-left:1.5em;}
+#toc li.d7 {margin-left:1.5em;}
+#toc li.d1 a.global {font-weight:bold;}
+#toc li.d2 a.namespace {font-weight:bold;}

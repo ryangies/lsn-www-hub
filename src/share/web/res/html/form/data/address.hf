@@ -1,0 +1,59 @@
+# HashFile 2.1
+
+fields => @{
+
+  %{
+    type => text
+    id => first_name
+    label => First Name
+  }
+
+  %{
+    type => text
+    id => last_name
+    label => Last Name
+  }
+
+  %{
+    type => text
+    id => company
+    label => Company
+    optional => 1
+  }
+
+  %{
+    type => text
+    id => address_1
+    label => Address Line 1
+  }
+
+  %{
+    type => text
+    id => address_2
+    label => Address Line 2
+    optional => 1
+  }
+
+  %{
+    type => text
+    id => address_3
+    label => City
+  }
+
+  %{
+    type => select
+    id => address_4
+    label => State
+    selected => ID
+    datasource => ./states.hf
+  }
+
+  %{
+    type => text
+    maxlength => 10
+    id => address_5
+    label => ZIP
+    datatype => zip
+  }
+
+}

@@ -1,0 +1,15 @@
+[#:html:head 'js' src='/res/desktop/Desktop.js']
+[#:html:head 'css' src='/res/desktop/styles.css']
+
+[#:into '/res/layouts/lsn/basic.xhtml' as 'body']
+<div id="all-tabs">
+  <ul class="tabs" id="rh-tabs"></ul>
+  <ul class="tabs" id="lh-tabs"></ul>
+</div>
+<div id="workspace"></div>
+[#:end into]
+
+[#:html:head 'js']
+var Desktop = new Desktop();
+addEvent('window', 'resize', "Desktop.resize();");
+[#:end html:head]

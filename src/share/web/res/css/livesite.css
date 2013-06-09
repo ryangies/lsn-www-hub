@@ -1,0 +1,120 @@
+/**
+ *  This file remains for backward compatibility only,
+ *  use /res/lsn/common.css instead.
+ */
+
+#lsn_mask,
+#lsn_mask iframe {
+  top: 0;
+  left: 0;
+  background-color: [#mask];
+  filter: alpha(opacity=55);
+  -moz-opacity: .55;
+  opacity: .55;
+  position: absolute;
+  z-index: 101;
+  width:100%;/*must have for any big value*/
+  height:100%;/*must have for any big value*/;
+}
+
+/* Fix for misbehaving mask in ie5.5/6 with select boxes.*/
+#lsn_mask iframe {
+  display:none;/*sorry for IE5*/ 
+  display/**/:block;/*sorry for IE5*/
+  position:absolute;/*must have*/
+  top:0;/*must have*/
+  left:0;/*must have*/
+  z-index:-1;/*must have*/
+  filter:mask();/*must have*/
+  width:100%;/*must have for any big value*/
+  height:100%;/*must have for any big value*/;
+}
+
+#lsn_message_box {
+  position: absolute;
+  background-color: rgb(255,255,255);
+  border: 1px outset [#bg_dark];
+  padding: 0 .5em .5em .5em;
+  min-widht: 200px;
+  z-index: 104;
+}
+
+#lsn_status {
+  position: absolute;
+  background-color: [#mask];
+  border: 1px solid [#bg_dark];
+  padding: 50px 100px 50px 100px;
+  z-index: 104;
+}
+
+#lsn_trace_box {
+  position: absolute;
+  background-color: [#mask];
+  border: 1px solid [#bg_dark];
+  padding: 5px;
+  z-index: 103;
+  overflow: auto;
+  height: 150px;
+  width: 350px;
+  font-size: smaller;
+}
+
+#lsn_dialog {
+  z-index: 102;
+  display: none;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  border: 1px outset [#color1];
+  background-color: [#bg_light];
+  width: 310px;
+  margin: 4px;
+}
+
+#lsn_dialog form {
+  padding: 5px;
+  margin: 0px;
+}
+
+.lsn_dialog_title {
+  font-size: 14px;
+  margin-bottom: 2px;
+  font-weight: bold;
+  background-color: [#bg_med];
+  padding: 2px;
+  border-top: 1px outset [#color2];
+  border-left: 1px outset [#color2];
+  border-bottom: 2px outset [#color2];
+  border-right: 1px outset [#color2];
+}
+
+#lsn_dialog_button_frame {
+  text-align: right;
+  margin-top: 10px;
+}
+
+#lsn_dialog_button_frame button {
+  margin-left: 4px;
+}
+
+#lsn_dialog_cancel_text {
+}
+
+#lsn_dialog_ok_text {
+  padding: 0 1em 0 1em;
+}
+
+__DATA__
+# Background colors
+bg_body => #f9f9f9
+bg_light => #fefefe
+bg_med => #EEEEEE
+bg_dark => #DDDDDD
+#Foreground colors
+color_body => #000
+color1 => #103565
+color2 => #16498C
+color3 => #1D5EB3
+#Special Colors
+mask => #eee
+status => #ffa

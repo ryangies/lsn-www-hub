@@ -1,0 +1,166 @@
+#!/usr/bin/perl
+package Local::LogEntry;
+sub new {
+  my $pkg = ref($_[0]) ? ref(shift) : shift;
+  my $self = bless {}, $pkg;
+  $self->parse(@_) if @_;
+  $self;
+}
+
+sub is_relevant {
+  my $self = shift;
+  my $regex = shift;
+  return unless $$self{'message'};
+  return if $$self{'message'} =~ /^ at /;
+  return if $$self{'message'} =~ /^Prototype mismatch:/;
+  return if $$self{'message'} =~ /^Constant subroutine .* redefined/;
+  return if $$self{'phase'} eq 'ChildInit';
+  return if $$self{'phase'} eq 'ChildExit';
+  if ($regex) {
+    return unless $$self{'message'} =~ $regex;
+  } else {
+    return if $$self{'phase'} eq 'Cleanup';
+  }
+  return 1;
+}
+
+#
+# Examples of log entries which we are parsing:
+#
+#   Prototype mismatch: sub WWW::Livesite::Cache::gettimeofday: none vs () at /usr/lib/perl5/5.10.0/Exporter.pm line 66.
+#    at /code/src/lib/perl/WWW/Livesite/Cache.pm line 4
+#   [Tue Sep 07 08:13:01 2010] [warn] <ChildInit> [19747-0.0:49122.2648] devbox.lsnllc
+#   [Tue Sep 07 08:13:02 2010] [warn] [client 10.0.1.201] <Cleanup> [28789-0.1:2.0177] Terminating child due to server errors., referer: http://testing.dev/desktop/ext/wireframe/editor.html
+#   [Wed Dec 08 05:37:14 2010] [debug] Apache2.pm(874): [client 10.0.1.201] <Response> [16595-0.1:0.2256] UPLOAD: received 1983187 of 3891961, referer: http://clients.dev/web/share/blank.html
+#   [Wed Dec 08 05:37:14 2010] [debug] filter.c(270): [client 10.0.1.201] prefetching 65536 bytes, referer: http://clients.dev/web/share/blank.html
+#
+sub parse {
+  my $self = shift;
+  my $text = shift;
+  chomp $text;
+  my $raw = $text; # copy
+
+  my ($referer, $filename, $line_no) = ('', '', '');
+  my ($date, $level, $client) = ('', 'warn', '');
+  my ($phase, $pid, $tid, $sw) = ('', '', '', '');
+
+  $text =~ s/, referer: (\S+)$// and $referer = $1;
+  $text =~ s/\\n$//;
+# $text =~ s/ at (\S+) line (\d+)\.?$// and ($filename, $line_no) = ($1, $2);
+
+  if (index($text, '[') == 0) {
+    $text =~ s/^\[([^\]]+)\] // and $date = $1;
+    $text =~ s/^\[(\w+)\] // and $level = $1;
+    $text =~ s/^([^:()]+)\((\d+)\): // and ($filename, $line_no) = ($1, $2);
+    $text =~ s/^\[client ([^\]]+)\] // and $client = $1;
+  }
+
+  if (index($text, '<') == 0) {
+    $text =~ s/^<(\w+)> // and $phase = $1;
+    $text =~ s/^\[(\d+)-(\d+\.\d):([\d\.]+)\] ?// and ($pid, $tid, $sw) = ($1, $2, $3);
+  }
+
+  $text =~ s/\s+$//; # reduces all-whitespace to '' (which is false)
+  $text =~ s/\\n/\n/g;
+  $text =~ s/\\t/\t/g;
+
+  %$self = (
+    'date' => $date,
+    'level' => $level,
+    'client' => $client,
+    'phase' => $phase,
+    'pid' => $pid,
+    'tid' => $tid,
+    'sw' => $sw,
+    'filename' => $filename,
+    'line_no' => $line_no,
+    'message' => $text,
+    'text' => $raw,
+  );
+}
+
+sub sort_key {
+  my $self = shift;
+  sprintf '%05d:%.1f:%-6f', $$self{'pid'} || 0, $$self{'tid'} || 0, $$self{'sw'} || 0;
+}
+
+1;
+
+package main;
+use strict;
+use warnings FATAL => qw(all);
+use App::Console::Color qw(:all);
+
+our $PerfReport = undef;
+our $LogFile = '/var/log/httpd/error_log';
+our $Lines = 20;
+our $Sort = 0;
+our $ShowTimes = 0;
+our $Regex = undef;
+our @Entries = ();
+our @Result = ();
+
+sub _usage {
+print <<__end;
+  -p          performance report
+  -a          show all relevant lines
+  -t          show times
+  -n          no colors
+  -l 10       show only last 10 relevant lines
+  -f path     path to error_log
+  -g regex    grep for this
+
+  to disable colors: export ANSI_COLORS_DISABLED=1
+__end
+# -s          sort results by pid and elapsed time
+}
+
+# Command-line options
+while (@ARGV) {
+  my $arg = shift @ARGV;
+  if ($arg =~ s/^-//) {
+    $arg =~ /p/ and $PerfReport = 1;
+    $arg =~ /a/ and $Lines = 'ALL';
+#   $arg =~ /s/ and $Sort = 1;
+    $arg =~ /t/ and $ShowTimes = 1;
+    $arg =~ /n/ and $ENV{ANSI_COLORS_DISABLED} = 1;
+    $arg eq 'l' and $Lines = shift @ARGV || 0;
+    $arg eq 'f' and $LogFile = shift @ARGV || '';
+    $arg eq 'g' and $Regex = shift @ARGV || '';
+    if ($arg eq '?' || $arg eq 'h' || $arg eq '-help' || $arg eq 'help') {
+      exit _usage();
+    }
+    next;
+  }
+  die "Unknown option: $arg\n";
+}
+
+# Read entries from the log file
+my $c = 0;
+open LOGFILE, "tac $LogFile |" or die;
+while (<LOGFILE>) {
+  last if $Lines ne 'ALL' && $c > $Lines;
+  my $entry = Local::LogEntry->new($_);
+  next unless $entry->is_relevant($PerfReport ? qr/^PERF:/ : $Regex);
+  unshift @Entries, $entry;
+  $c++;
+}
+close LOGFILE;
+
+# Output
+if ($PerfReport) {
+  foreach my $entry (@Entries) {
+    push @Result, sprintf "%s\t%s\n", $$entry{'sw'}, $$entry{'message'};
+  }
+} else {
+  my $sorted = $Sort ? [sort {$a->sort_key cmp $b->sort_key} @Entries] : \@Entries;
+  foreach my $entry (@$sorted) {
+    my $fmt = $$entry{'level'} eq 'error' ? '%_rs' :
+              $$entry{'level'} eq 'warn'  ? '%_ms' :
+              $$entry{'level'} eq 'info'  ? '%_bs' : '%s';
+    push @Result, $ShowTimes
+      ? c_sprintf("%_gs $fmt\n", $entry->sort_key, $$entry{'message'})
+      : c_sprintf("$fmt\n", $$entry{'message'});
+  }
+}
+print $_ for @Result;

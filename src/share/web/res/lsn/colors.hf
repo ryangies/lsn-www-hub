@@ -1,0 +1,13 @@
+# Background colors
+bg_body => #ffffff
+bg_light => #fefefe
+bg_med => #EEEEEE
+bg_dark => #DDDDDD
+#Foreground colors
+color_body => #000
+color1 => #103565
+color2 => #16498C
+color3 => #1D5EB3
+#Special Colors
+mask => #eee
+status => #ffa

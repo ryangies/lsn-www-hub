@@ -1,0 +1,48 @@
+[#:use /res/palettes/xwin.hf]
+[#:use /res/css/snippets.hf]
+#dlgframe[#UID] {
+  text-align:left;
+  position: absolute;
+  z-index: 102;
+  top:0;
+  left:0;
+  padding:0;
+  margin:0;
+  font-size:10pt;
+}
+#dlgframe[#UID] {
+  border:1px solid [#gray50];
+  border-radius:3px;
+  [#box-shadow blur='5px' color=gray80]
+  [#linear-gradient color0=white color1=gray98]
+}
+#dlgframe[#UID] .dlghead,
+#dlgframe[#UID] .dlgbody {
+  position:relative;
+  padding:.5em;
+}
+#dlgframe[#UID] .dlgbody {
+  color: #444;
+  overflow: auto; /* Allows input cursor to display in FF. */
+}
+#dlgframe[#UID] .dlghead {
+  border-bottom:1px solid [#gray50];
+  [#linear-gradient color0=gray95 color1=gray90]
+  color: #333;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#dlgframe[#UID] .dlghead .subtitle {
+  color: #444;
+  font-weight: normal;
+  font-size: .8em;
+  padding-left:.5em;
+}
+#dlgframe[#UID] .dlgarea {position:relative;}
+#dlgframe[#UID] .dlgarea div.flow { overflow: auto; }
+#dlgframe[#UID] .dlgarea #btnbar {
+  margin-top:5px;
+  padding-top:5px;
+}
+#dlgframe[#UID] .dlgarea #btnbar {text-align: right;}
+#dlgframe[#UID] .dlgarea #btnbar button {width:75px;}

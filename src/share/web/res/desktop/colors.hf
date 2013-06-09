@@ -1,0 +1,31 @@
+# Color Schemes 
+%livesite {
+  # Background colors
+  bg_body => #f9f9f9
+  bg_light => #fefefe
+  bg_med => #EEEEEE
+  bg_dark => #DDDDDD
+  #Foreground colors
+  color_body => #000
+  color1 => #103565
+  color2 => #16498C
+  color3 => #1D5EB3
+  #Special Colors
+  mask => #eef
+  status => #ffa
+}
+%chocolate {
+  # Background colors
+  bg_body => #212121
+  bg_light => #999933
+  bg_med => #BFBF3F
+  bg_dark => #E6E64C
+  #Foreground colors
+  color_body => #FFF
+  color1 => #E67f4C
+  color2 => #FC0
+  color3 => #BF6A3F 
+  #Special Colors
+  mask => #eef
+  status => #ffa
+}

@@ -1,0 +1,140 @@
+# HashFile 2.1
+builder => ecma
+copyright => Livesite (c) Livesite Networks, LLC 2006-2013.
+working_dir => ${LSN_SRC_ROOT}/lsn-javascript/src/lib/ecma
+target => ../src/share/web/res/js/livesite.js
+doc_target => ../src/share/web/res/js/docs/livesite.doc
+vim_target => ../src/share/web/res/js/docs/livesite.vim
+name => Livesite ECMAScript
+version => .014
+
+files => @{
+  # Base
+  ECMAScript.js
+  lang/lang.js
+  impl/Parameters.js
+  impl/Options.js
+  util/util.js
+  util/Monitor.js
+  units/units.js
+  date/date.js
+  error/error.js
+  error/programatic.js
+  error/strings.js
+  threads/threads.js
+  # Paul Johnston's sha1 algorithms
+  crypt/sha1.js
+  # Console logging
+  console/console.js
+  # Action framemwork
+  action/ActionDispatcher.js
+  action/ActionListener.js
+  action/ActionEvent.js
+  # Data structures
+  data/data.js
+  data/utf8.js
+  data/md5.js
+  data/base64.js
+  data/entities.js
+  data/Pool.js
+  data/Node.js
+  data/NodeLayer.js
+  data/Address.js
+  data/Container.js
+  data/Array.js
+  data/HashList.js
+  data/XFR.js
+  data/JSON.js
+  # HTTP requests
+  http/Location.js
+  http/http.js
+  http/Request.js
+  http/JSONRequest.js
+  http/Cookies.js
+  # Web scripting
+  platform/platform.js
+  dom/dom.js
+  dom/constants.js
+  dom/node.js
+  dom/actions.js
+  dom/xpath.js
+  dom/console.js
+  dom/include.js
+  dom/Canvas.js
+  dom/ContentLoaded.js
+  dom/KeyPress.js
+  dom/StyleSheet.js
+  dom/EventListener.js
+  dom/condense.js
+  dom/sizzle.js
+  dom/LocalStorage.js
+  # Livesite
+# lsn/sys/sys.js
+# lsn/sys/System.js
+  lsn/Request.js
+  lsn/http/PerlModule.js
+  lsn/http/Stream.js
+  # Livesite user interface components
+  lsn/ui/zindex.js
+  lsn/ui/Base.js
+  lsn/Mask.js
+  lsn/Move.js
+  lsn/Widget.js
+  lsn/Dialog.js
+  lsn/PageLayout.js
+  lsn/DragHandle.js
+  lsn/ContentController.js
+  lsn/ComboBox.js
+  lsn/InputListener.js
+  lsn/dom/dom.js
+# lsn/dom/ElementListener.js
+# lsn/dom/ElementAdaptor.js
+# lsn/dom/ActionAdaptor.js
+# lsn/dom/adaptors.js
+  lsn/dom/LocationListener.js
+  lsn/dom/KeyListener.js
+  lsn/dom/Scrubber.js
+  # Login and authorization
+  lsn/auth/auth.js
+  lsn/ui/LoginDialog.js
+  # Animation and effects
+  lsn/fx/fx.js
+  lsn/fx/Effect.js
+  lsn/fx/Sequencer.js
+  lsn/fx/SequencerEvent.js
+  lsn/fx/Animator.js
+  lsn/fx/AnimatorProgress.js
+  lsn/fx/effects/Style.js
+  lsn/fx/effects/Opacify.js
+  lsn/fx/effects/Swap.js
+  # Some new UI stuff
+  lsn/ui/colors.js
+  lsn/ui/Page.js
+  lsn/ui/Element.js
+  lsn/ui/View.js
+  lsn/ui/Banner.js
+  lsn/ui/Mask.js
+  lsn/ui/Dialog.js
+  lsn/ui/StatusIcon.js
+  lsn/ui/Status.js
+  lsn/ui/Prompt.js
+  lsn/forms/Form.js
+  lsn/forms/Fieldset.js
+  lsn/forms/Field.js
+  lsn/forms/InputBase.js
+  lsn/forms/InputBoolean.js
+  lsn/forms/InputDate.js
+  lsn/forms/InputDecimal.js
+  lsn/forms/InputText.js
+  lsn/forms/InputTextarea.js
+  lsn/forms/InputCheckbox.js
+  # Page layout
+  lsn/layout/layout.js
+  lsn/layout/ResizeRule.js
+  lsn/layout/Area.js
+  lsn/layout/Layout.js
+  lsn/layout/ViewportLayout.js
+  lsn/layout/WrapperLayout.js
+  # Define global 'js' object (last for performance)
+  global.js
+}

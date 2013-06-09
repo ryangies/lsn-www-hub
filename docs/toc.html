@@ -1,0 +1,18 @@
+[#:into /res/layouts/xhtml+lsn]
+[#:css src=`./styles.css`]
+[#:set doc = :cgi('doc')]
+[#:use doc]
+
+<h1>[#doc]</h1>
+<div id="toc">
+  <ul>
+[#:for (def) in defs]
+  <li id="[#def/id]" class="d[#def/depth]">
+    <a class="[#def/type]" target="doc" href="index.html?doc=[#:cgi 'doc']#[#def/id]"
+      onclick="return parent._select(null, '[#def/id]')">
+    [#./module.pm/as_html_id definition => def]
+    </a>
+  </li>
+[#:end for]
+  </ul>
+</div>

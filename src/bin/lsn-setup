@@ -1,0 +1,455 @@
+#!/usr/bin/perl -w
+package App::LSN::Setup;
+use strict;
+our $VERSION = 1.0;
+
+use Error::Programatic;
+use Perl::Options qw(my_opts);
+use Perl::Util qw(unshift_uniq);
+use Data::Hub qw($Hub);
+use Data::Hub::Util qw(:all);
+use Data::Format::Hash qw(hf_format);
+use Data::OrderedHash;
+use Digest::SHA1;
+use base 'App::Console::CommandScript';
+
+our %USAGE = ();
+
+$USAGE{'connect'} = {
+  summary => 'Connect to a specific livesite distribution',
+  params => Data::OrderedHash->new(
+    '<path>' => 'Distribution path, e.g., /opt/livesite-b78',
+  ),
+};
+
+$USAGE{'disconnect'} = {
+  summary => 'Revert to the default [server] configuration',
+  params => Data::OrderedHash->new(
+  ),
+};
+
+$USAGE{'config'} = {
+  summary => 'Update the config files',
+  params => Data::OrderedHash->new(
+    '-force' => 'Update even when setup version is up-to-date',
+  ),
+};
+
+$USAGE{'setpass'} = {
+  summary => 'Set the administrator\'s password',
+};
+
+$USAGE{'chown'} = {
+  summary => 'Set file permissions',
+  params => Data::OrderedHash->new(
+  ),
+};
+
+$USAGE{'compile'} = {
+  summary => 'Compile a repository template with our standard -use path',
+  params => Data::OrderedHash->new(
+    '<template>'  => 'Template (see lsn-tms)',
+    '<target>'    => 'Target   (see lsn-tms)',
+  ),
+};
+
+sub new {
+  my $self = shift->SUPER::new();
+  $self->{'home'} = shift or throw Error::Programatic;
+  $self->{'domain'} = path_name($$self{home});
+  $self->{'svcs_fn'} = 'config/services.hf';
+  $self->{'lsn_dir'} = path_normalize("$$self{home}/opt/livesite");
+  $self;
+}
+
+sub fail {
+  my $self = shift;
+  chdir $self->{home};
+  @_ and die @_, " (use -help for help).\n";
+  exit 1;
+}
+
+sub connect {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  my $src_path = shift or $self->fail('No source specified');
+  $src_path = path_normalize($src_path);
+  die "Source does not exist\n" unless -e $src_path;
+  my $lsn_path = $$self{'lsn_dir'};
+  my $lsn_ppath = path_parent($lsn_path);
+  dir_create($lsn_ppath) unless -d $lsn_ppath;
+  system 'ln', '--symbolic', '--no-target-directory', '--interactive', 
+    $src_path, $lsn_path;
+  $self->config(-force => 1);
+};
+
+sub disconnect {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  unlink $$self{'lsn_dir'};
+  $self->config(-force => 1);
+};
+
+sub setpass {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  my $upath = $$opts{path} || 'config/users';
+  my $hf = $Hub->vivify($upath, FS('HashFile'));
+  my $un = _prompt('Administrator username', 'admin');
+  my $pw = _prompt_for_password();
+  $hf->{$un} = {groups=>'admins','password.sha1'=>$pw};
+  $hf->save();
+}
+
+sub config {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  $self->_fixup() unless $self->_is_current_version && !$$opts{force};
+  $Hub->expire();
+  $self->tms('update', -opts => $opts);
+  my $svcs = $Hub->get($$self{svcs_fn});
+  $svcs->{'lsn-setup-version'} = $VERSION;
+  $svcs->save();
+}
+
+sub compile {
+  my $self = shift;
+  my @use = $self->_using;
+  $self->tms('compile', @_, '-use', join(',', @use));
+}
+
+sub _is_current_version {
+  my $self = shift;
+  my $svcs = $Hub->get($$self{svcs_fn}) or return;
+  my $ver = $svcs->{'lsn-setup-version'} or return;
+  $ver >= $VERSION;
+}
+
+sub _fixup {
+  my $self = shift;
+  my $server = $self->get_server_config();
+  $self->_fixup_repo($server);
+  $self->_fixup_services($server);
+  $self->_fixup_livesite($server);
+  $self->chown();
+}
+
+# Standard hash overlay which template instances use
+sub _using {
+  my $self = shift;
+  my $server = $self->get_server_config();
+  return (
+    "$$self{svcs_fn}/livesite",
+    "$$self{svcs_fn}/global",
+    "file:/$server->{'dir-livesite-conf'}/config.hf",
+  );
+}
+
+# Manually fix the template repository
+sub _fixup_repo {
+  my $self = shift;
+  my $server = shift;
+  # Ensure we are connected to the correct template repository.
+  if (-d $$self{lsn_dir}) {
+    $self->tms('connect', "$$self{lsn_dir}/share/server/site", '-force');
+  } else {
+    $self->tms('connect', "$$server{'dir-livesite-share'}/server/site", '-force');
+  }
+  # For each template instance, remove the -use variables which are now
+  # part of config/services.hf.
+  my @all = $self->tms('_get_instances');
+  my @use = $self->_using();
+  foreach my $inst (@all) {
+    $inst = curry($inst);
+    $inst->delete('vars/domain');
+    $inst->delete('vars/port');
+    $inst->delete('vars/enable-livesite');
+    unshift_uniq($inst->{use}, @use);
+  }
+  $self->tms('_save_instance_db');
+}
+
+# Setup config/services.hf
+sub _fixup_services {
+  my $self = shift;
+  my $server = shift;
+  my $conf = undef;
+  my $svcs = $Hub->vivify($$self{svcs_fn});
+  if (-d $$self{lsn_dir}) {
+    # This is a local install
+    $conf = Data::OrderedHash->new(
+      'enable-livesite'     => 1,
+      'use-lib'             => "$$self{lsn_dir}/lib",
+      'dir-livesite-conf'   => $$server{'dir-livesite-conf'},
+      'dir-livesite-share'  => "$$self{lsn_dir}/share",
+    );
+  } else {
+    # User server settings
+    $conf = Data::OrderedHash->new(
+      'enable-livesite'     => 1,
+      'use-lib'             => $$server{'use-lib'},
+      'dir-livesite-conf'   => $$server{'dir-livesite-conf'},
+      'dir-livesite-share'  => $$server{'dir-livesite-share'},
+    );
+  }
+  my $defaults = {
+    'enable-https'        => 0,
+    'force-www'           => 0,
+    'max_post_size'       => '64M',
+  };
+  if (-e '/sbin/rotatelogs') {
+    $$defaults{'piped-logs'} = {
+      'command' => '/sbin/rotatelogs',
+      'options' => '5M',
+    };
+  }
+  my $global = Data::OrderedHash->new(
+    'domain'              => $$self{'domain'},
+    'port'                => $$server{'port'},
+    'use-htaccess'        => _pick('use-htaccess', $$svcs{'global'}, $server),
+    'production'          => _pick('production', $$svcs{'global'}, $server),
+    'log_level'           => _pick('log_level', $$svcs{'global'}, $server),
+    'enable-gzip'         => _pick('enable-gzip', $$svcs{'global'}, $server),
+    'enable-https'        => _pick('enable-https', $$svcs{'global'}, $server, $defaults),
+    'force-www'           => _pick('force-www', $$svcs{'global'}, $server, $defaults),
+    'max_post_size'       => _pick('max_post_size', $$svcs{'global'}, $server, $defaults),
+    'piped-logs'          => _pick('piped-logs', $$svcs{'global'}, $server, $defaults),
+  );
+  if ($server->{'use-global-user'}) {
+    $$global{'user'}      =  $$svcs{'global'}{'user'} || $$server{'user'},
+    $$global{'group'}     =  $$svcs{'global'}{'group'} || $$server{'group'},
+    $$global{'group-svn'} =  $$svcs{'global'}{'group-svn'} || $$server{'group-svn'} || $$server{'group'},
+  } else {
+    $$global{'user'}      =  $$svcs{'global'}{'user'} || $$self{'domain'},
+    $$global{'group'}     =  $$svcs{'global'}{'group'} || $$self{'domain'},
+    $$global{'group-svn'} =  $$svcs{'global'}{'group-svn'} || $$server{'group-svn'} || 'svnadmin',
+  }
+  $svcs->{'lsn-setup-version'} = $VERSION;
+  $svcs->{'global'} = $global;
+  $svcs->{'livesite'} = $conf;
+  $svcs->save();
+  print "Wrote: $$self{svcs_fn}\n";
+
+  if (!$$server{'use-global-apache'}) {
+
+    my @use = $self->_using();
+    my $domain = $$global{'domain'};
+    my $vh_dir = $$self{'home'};
+
+    # Compile server config files
+    $self->tms('compile', 'apache.conf', 'config/apache.conf', '-use', join(',', @use), '-quiet');
+    $self->tms('compile', 'apache.opts', 'config/apache.opts', '-use', join(',', @use), '-quiet');
+    $self->tms('compile', 'daemon.opts', 'config/daemon.opts', '-use', join(',', @use), '-quiet');
+
+    # Create PID directory
+    dir_create("$vh_dir/run");
+
+  }
+
+}
+
+# Setup config/livesite-base.hf
+#       config/livesite.hf
+sub _fixup_livesite {
+  my $self = shift;
+  my $server = shift;
+  my @use = $self->_using;
+  my $user_conf = "config/livesite.hf";
+  if (-e 'config/livesite-base.hf') {
+    # Any changes made to this file will be overwritten (by design)
+    $self->tms('update', 'config/livesite-base.hf', '-force');
+  } else {
+    # config/livesite-base.hf is made to be overwritten by this setup tool
+    $self->tms('compile', 'livesite.hf', 'config/livesite-base.hf',
+      '-use', join(',', @use), '-noforce');
+    # config/livesite.hf was the one-and-only config, now it is where extended
+    # information is kept.
+    if (-e $user_conf) {
+      $self->tms('orphan', "config/livesite.hf", '-quiet');
+      warn '-' x 60, "\n";
+      $self->err_printf("%_rs\n", "NOTICE! config/livesite.hf must be edited by hand.");
+      warn '-' x 60, "\n";
+    } else {
+      $Hub->vivify($user_conf, FS('HashFile'))->save();
+      $self->print("Created: $user_conf\n");
+    }
+  }
+  # the livesite part has been separated (it use to be in apache.d/www.conf
+  unless (-e 'config/apache.d/inc/livesite.conf') {
+    $self->tms('compile', 'apache.d/inc/livesite.conf', 'config/apache.d/inc/livesite.conf',
+      '-use', join(',', @use), '-noforce');
+  }
+}
+
+# Our template-management system
+sub tms {
+  my $self = shift;
+  unless ($self->{tms}) {
+    my $lsn_dir = $$self{lsn_dir};
+    if (-d $lsn_dir) {
+      unshift @INC, "$lsn_dir/lib";
+    }
+    eval {use App::TMS::Client};
+    $self->{tms} = App::TMS::Client->new($self->{home});
+  }
+  my $cmd = shift;
+  $self->{tms}->$cmd(@_);
+}
+
+# Get the server configuration for this domain.
+sub get_server_config {
+  my $self = shift;
+  if (!$self->{server_config}) {
+    my $sconf = Data::Hub::FileSystem::Node->new('/etc/livesite/config.hf')
+      or $self->fail('Missing server configuration');
+    my $pconf = Data::Hub::FileSystem::Node->new('/etc/livesite/proxy.hf')
+      or $self->fail('Missing proxy configuration');
+    my $host = $pconf->get("/hosts/{domain eq $$self{domain}}/{0}")
+      or $self->fail('Host not found');
+    $self->{server_config} = {%$sconf, %$host};
+  }
+  $self->{server_config}
+}
+
+# Change ownership of files
+sub chown {
+  my $self = shift;
+  my $sconf = $self->get_server_config();
+  my $svcs = $Hub->get($$self{svcs_fn}) or die 'Missing services config';
+  my $user = $svcs->get('global/user') or die 'Unknown user';
+  my $group = $svcs->get('global/group') or die 'Unknown group';
+  my $gsvn = $svcs->get('global/group-svn') or die 'Unknown group-svn';
+  my $vh_dir = $self->{'home'};
+  my $repo_dir = "$vh_dir/repo";
+  my $has_repo = -e $repo_dir;
+  my $ghome = $has_repo ? $gsvn : $group;
+  # Recursive permissions on this directory
+  warn "chown $vh_dir...\n";
+  `chown -R $user:$group $vh_dir`;
+  `chgrp $ghome $vh_dir`; # Repo group needs read
+  `chmod g+rX $vh_dir`;
+  `chmod o-rwx $vh_dir`;
+  # Repository permissions (shared group-svn can write)
+  if ($has_repo) {
+    warn "chown $repo_dir...\n";
+    `chown -R $user:$gsvn $repo_dir`;
+    `chmod -R g-w $repo_dir`;
+    `chmod -R g+rw $repo_dir/db`;
+    `chmod -R g+rw $repo_dir/locks`;
+  }
+}
+
+# Prompt for password
+sub _prompt_for_password {
+  my $pw1 = _prompt('Password', -noecho => 1);
+  my $pw2 = _prompt('   again', -noecho => 1);
+  return Digest::SHA1::sha1_hex($pw1) if $pw1 eq $pw2;
+  print STDERR "Passwords do not match\n";
+  _prompt_for_password()
+}
+
+# Prompt for input
+sub _prompt {
+  my $opts = my_opts(\@_);
+  my $p = shift || '';
+  my $default = shift;
+  my $r;
+  print STDERR "$p: ";
+  $default and print STDERR "[$default] ";
+  $opts->{noecho} and system("stty -echo");
+  $r = <STDIN>;
+  if ($opts->{noecho}) {
+    system("stty echo");
+    print STDERR "\n";
+  }
+  chomp $r;
+  $r || $default;
+}
+
+# Pick the best value from the list
+sub _pick {
+  my ($k, $v) = (shift, undef);
+  for (@_) {
+    next unless defined $_;
+    $v = ref $_ ? $_->{$k} : $_;
+    last if defined $v;
+  }
+  $v;
+}
+
+# ------------------------------------------------------------------------------
+
+package main;
+use Data::Hub qw($Hub);
+use Cwd qw(cwd);
+App::LSN::Setup->new(cwd())->exec(@ARGV);
+
+__END__
+
+Config settings which we will use from /etc/livesite/config.hf (they belong to
+the physical server)
+
+  'domain-prefix' => $$old{'domain-prefix'},
+  'domain-suffix' => $$old{'domain-suffix'},
+  'server-external-ip' => $$old{'server-external-ip'},
+  'server-internal-ip' => $$old{'server-internal-ip'},
+  'dir-vhost-root' => $$old{'dir-vhost-root'},
+  'use-global-apache' => $$old{'use-global-apache'},
+  'x-livesite' => $$old{'x-livesite'},
+
+=pod:description
+
+  First, the software needs to be deployed to this directory, this is done by
+  simply extracting the livesite tarball.  Second, the configuration scripts need 
+  to be updated to use the software.
+
+=pod:examples
+
+  # Install, meaning download, extract, and configure (or upgrade)
+  lsn-setup install b27
+
+  # Just download and extract livesite-b27.tgz from /usr/local/src
+  lsn-setup download b27
+
+  # Same thing, but the tarball is not in /user/local/src
+  lsn-setup download b27 -from=/home/ryan/dev/mkdist/out/
+
+=cut
+
+#
+# config/services.hf
+#
+# The services datastore provides configuration variables for any service
+# running on this domain.  Each service should use its own root key.
+
+
+  print<<__end;
+Manual upgrade steps:
+  2) Remove per-file values from the .tms/instances.hf which are in 
+     $$self{svcs_fn}. Ensure the global config is at the end of the
+     \@use list:
+        file://etc/livesite/config.hf
+  2) Run 'lsn-setup config' to repopulate the config files.
+__end
+}
+
+# DEPRICATED
+sub _init_missing_configs {
+  my $self = shift;
+  my $mods = 0;
+  my $server = undef;
+  foreach my $tpl_path ('apache.d/inc/livesite.conf') {
+    my $cfg_path = "config/$tpl_path";
+    next if -e $cfg_path;
+    $server ||= $self->get_server_config();
+    my @use = (
+      "$$self{svcs_fn}/livesite",
+      "$$self{svcs_fn}/global",
+      "file:/$server->{'dir-livesite-conf'}/config.hf",
+    );
+    $self->tms('compile', $tpl_path, $cfg_path,
+      '-use', join(',', @use), '-force');
+    $mods++;
+  }
+  $self->chown('config') if $mods;
+}

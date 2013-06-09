@@ -1,0 +1,44 @@
+[#:into /res/hub/dlg/frame.ht
+ _title='Account Settings'
+ _subtitle='for <b>[#/sys/user/id]</b> on [#/sys/server/name]'
+]
+
+<div id="[#UID2]"></div>
+
+[#:css]
+#[#UID2] th {text-align:left;font-weight:normal;}
+#[#UID2] th h4 {margin:0;}
+#[#UID2] th label {margin:0 1em;}
+[#:end css]
+
+[#:js event='widget,ok']
+
+  if (this.props.form.submitFormChanges()) {
+    this.stopEvent();
+  }
+
+[#:end js]
+
+[#:js event='widget,load']
+
+  var form = new js.lsn.forms.Form(
+    [#:js:var ./form.hf],
+    [#:js:var ./module.pm/get]
+  );
+
+  form.addActionListener('onSubmitOk', function (action, data) {
+    this.hide();
+    js.window.location.reload();
+  }, this);
+
+  form.addActionListener('onSubmitNotOk', function (action, ex, req) {
+    alert(ex);
+  });
+
+  var div = js.dom.getElement('[#UID2]');
+  div.appendChild(form.getRootElement());
+  form.focus();
+
+  this.props.form = form;
+
+[#:end js]

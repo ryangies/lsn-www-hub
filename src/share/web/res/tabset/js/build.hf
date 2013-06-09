@@ -1,0 +1,9 @@
+# HashFile 2.1
+copyright => Livesite (c) Livesite Networks, LLC 2008-2009.
+target => ../scripts.js
+files => @{
+  TabLayout.js
+  TabNav.js
+  Tab.js
+  Tabset.js
+}

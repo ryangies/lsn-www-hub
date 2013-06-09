@@ -1,0 +1,63 @@
+[#:comment]
+
+  Include this file to get global action listeners on anchors and buttons.
+
+    <a href="#action:changeColor:red">Red</a>
+    <button value="action:changeColor:tan">Tan</button>
+
+    js.dom.addActionListener('changeColor', function (action, arg1) {
+      // action.element   The element which was clicked
+      // action.event     The event associated with the click
+      js.dom.setStyle(js.dom.getBody(), 'background-color', arg1);
+    });
+
+  In the above:
+
+    arg1    will be either 'red' or 'tan'.
+    elem    will be the A or BUTTON which triggered the action
+    action  is a js.action.ActionEvent object
+
+  Adaptors will be attached:
+
+    a) When the document is loaded (DOMContentLodaded)
+    b) When elements are created using js.dom.createElement
+
+[#:end comment]
+[#:js src='/res/js/livesite.js']
+[#:js src='/res/js/lsn-adaptors.js']
+[#:js -once]
+js.dom.addEventListener(js.document, 'load', function (event) {
+
+  function _onEvent (event, element) {
+    var spec;
+    if (element.tagName == 'A') {
+      var href = js.dom.getAttribute(element, 'href');
+      spec = new js.http.Location(href).getHash();
+    } else if (element.tagName == 'BUTTON') {
+      spec = js.dom.getAttribute(element, 'value');
+    } else {
+      throw new Error ('Unhandled adaptor element: ' + element.tagName);
+      return;
+    }
+    var parts = spec.split(/:/);
+    var type = parts.shift();
+    var name = parts.shift();
+    var arg = parts.join(':');
+    var action = {
+      'name': name,
+      'event': event,
+      'element': element
+    };
+    if (event.preventDefault) event.preventDefault();
+    if (type == 'action') {
+      js.dom.executeAction(action, arg);
+    } else {
+      throw new Error ('Unhandled adaptor type: ' + type);
+    }
+  }
+
+  js.dom.addElementListener('a[href^="#action:"]', 'click', _onEvent);
+  js.dom.addElementListener('button[value^="action:"]', 'click', _onEvent);
+
+});
+[#:end js]

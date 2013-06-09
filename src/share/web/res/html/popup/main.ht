@@ -1,0 +1,9 @@
+[#:css src=`./local.css`]
+[#:js src=`./local.js`]
+<div id="[#_id || UID2]" style="display:none;">
+  <div id="popup-content-area">
+    [#CONTENT]
+  </div>
+  <!--[if lte IE 6.5]><iframe width="0" height="0" src="about:blank"></iframe><![endif]-->
+  <a id="popup-btn-close" href="#close" rel="action">[#:html:image `./btn-close.png` border='0' alt='Close']</a>
+</div>

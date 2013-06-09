@@ -1,0 +1,37 @@
+[#:if /sys/user][#:http:no-cache][#:end if]
+[#:js src='./scripts.js']
+[#:css src='./styles.css']
+[#:js event='document,load']
+  var elem = js.dom.getElement('[#UID]a');
+  if (!elem) return;
+  js.dom.addEventListener(elem, 'click', function (event) {
+    js.dom.stopEvent(event);
+    new js.lsn.Dialog('/res/user/user.dlg').show();
+  });
+[#:end js]
+[#:into /res/layouts/xhtml+lsn]
+  [#:if _show_auth && /sys/user]
+  <div id="gtopr">
+    <a id="[#UID]a" href="/res/user/index.html" title="[#tooltips/usermod]">[#/sys/user/real_name || /sys/user/id]</a>
+    (<a href="/res/login/logout.html" title="[#tooltips/signout]">Sign out</a>)
+  </div>
+  [#:end if]
+  [#CONTENT || body || '']
+  <div id="tab-frame" class="w1 h2">
+    <div id="lh-tab-frame" class="w2 h2">
+      <ul class="tabset" id="lh-tabs"></ul>
+      <div id="lh-tab-nav"></div>
+    </div>
+    <div id="rh-tab-frame" class="w3 h2">
+      <ul class="tabset" id="rh-tabs"></ul>
+      <div id="rh-tab-nav"></div>
+    </div>
+  </div>
+  <div id="hsplit" class="w4 h3 l2"></div>
+  <div class="w1 h3" id="workspace"></div>
+[#:end into]
+__DATA__
+tooltips => %{
+  usermod => Update your user information
+  signout => This will end your authenticated session
+}

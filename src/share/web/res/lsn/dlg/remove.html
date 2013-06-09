@@ -1,0 +1,23 @@
+[#:into ./base.html]
+[#:js src=`./js/Common.js`]
+
+<h3>[#del-prompt.str]:</h3>
+<div id="addr[#UID]" class="indt"></div>
+
+[#:js event='dialog, ready']
+  var n = this.params.node;
+  js.dom.replaceChildren('addr[#UID]', js.lsn.ext.dlg.createIconAddress(n));
+[#:end js]
+
+[#:js event='dialog, ok']
+  var n = this.params.node;
+  this.params.hub.remove(n.addr);
+[#:end js]
+
+[#:css]
+#addr[#UID] {color:red;font-weight:bold;}
+[#:end css]
+
+__DATA__
+title => Delete
+del-prompt.str => Do you really want to delete

@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>[#browser_title || '']</title>
+    [#:if browser_icon]
+    <link rel="shortcut icon" href="[#browser_icon]" type="image/x-icon"/>
+    [#:end if]
+    [#:css src=`/res/css/normalize.css`]
+  </head>
+  <body>
+    [#CONTENT]
+  </body>
+</html>

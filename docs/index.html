@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en_US.UTF-8" lang="en_US.UTF-8">
+[#:set doc = :cgi('doc')]
+[#:if doc]
+  <head>
+    <title>[#doc]</title>
+  </head>
+  <frameset cols="300,*">
+    <frame id="toc" name="toc" src="toc.html?doc=[#doc]" frameborder="0"/>
+    <frame id="doc" name="doc" src="doc.html?doc=[#doc]" frameborder="0"/>
+  </frameset>
+[#:else]
+  <head>
+    <title>Select a library</title>
+  </head>
+  <body>
+  [#:for (name,doc) in ./{\.doc$}]
+    <a href="?doc=./[#name]">[#name]</a><br/>
+  [#:end for]
+  </body>
+[#:end if]
+</html>
+
+[#:js src='/res/js/livesite.js']
+[#:js -global]
+var _selected;
+var _toc;
+var _doc;
+function _init () {
+    _toc = new ECMAScript.Class(js.dom.getContentWindow('toc'), js.dom.getContentDocument('toc'));
+    _doc = new ECMAScript.Class(js.dom.getContentWindow('doc'), js.dom.getContentDocument('doc'));
+}
+function _select (event, id) {
+  try {
+    _init();
+  } catch (ex) {
+    js.dom.setTimeout(_select, 100, this, [id]);
+    return false;
+  }
+  if (!id) id = document.location.hash.substr(1);
+  if (_selected) {
+    _doc.dom.removeClassName(_selected, 'sel');
+    _toc.dom.removeClassName(_selected, 'sel');
+    _selected = undefined;
+  }
+  if (id) {
+    _doc.dom.addClassName(id, 'sel');
+    _toc.dom.addClassName(id, 'sel');
+    var p = _doc.dom.getCanvasPosition();
+    var y = _doc.dom.getTop(id);
+    if ((y + 50) > (p.top + p.height) || (y - 50) < p.top) {
+      var h = Math.min(_doc.dom.getHeight(id), p.height);
+      var scrollTop = y - (p.height/2) + (h/2);
+      _doc.window.scrollTo(0, scrollTop);
+    }
+    _selected = id;
+    //Requires hash polling for back button
+    //js.document.location.hash = id;
+  }
+  if (event) js.dom.stopEvent(event);
+  return false;
+}
+js.dom.addEventListener(window, 'load', _select);
+[#:end js]

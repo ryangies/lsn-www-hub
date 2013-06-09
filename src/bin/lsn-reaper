@@ -1,0 +1,324 @@
+#!/usr/bin/perl -w
+package App::LSN::Reaper;
+use strict;
+our $VERSION = 0.9;
+
+use Error::Programatic;
+use Perl::Options qw(my_opts);
+use Data::Hub qw($Hub);
+use Data::Hub::Util qw(:all);
+use Data::OrderedHash;
+use Misc::Time qw(time_ymdhms);
+use base 'App::Console::CommandScript';
+
+our %USAGE = ();
+
+$USAGE{'list'} = {
+  summary => 'Run without deleting anything',
+  params => Data::OrderedHash->new(
+  ),
+};
+
+$USAGE{'run'} = {
+  summary => 'Run the reaper',
+  params => Data::OrderedHash->new(
+  ),
+};
+
+#
+# XXX: Config files are actually specified by `PerlSetVar` directives. This 
+# script however expects the files to be in their standard locations.
+#
+#   ./config/livesite.hf
+#   ./config/livesite-base.hf
+#
+
+our $Max_Age_For_Response_Cache = '3M';
+our $Max_Age_For_Debug_Files = '1h';
+
+sub new {
+  my $self = shift->SUPER::new();
+  $self->{'home'} = shift or throw Error::Programatic;
+  $self->{'domain'} = path_name($$self{home});
+  $self->{'maxage_cache'} = _timeout_to_seconds($Max_Age_For_Response_Cache);
+  $self->{'maxage_debug'} = _timeout_to_seconds($Max_Age_For_Debug_Files);
+  $self->{'maxage_session'} = $self->get_auth_timeout();
+  $self->{'now'} = time;
+  $self->{'sidstat'} = undef;
+  $self->{'etagstat'} = undef;
+  $self->{'sendstat'} = undef;
+  $self;
+}
+
+sub fail {
+  my $self = shift;
+  chdir $self->{home};
+  @_ and die @_, " (use -help for help).\n";
+  exit 1;
+}
+
+sub list {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  $self->main();
+}
+
+sub run {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  $self->main(-delete => 1);
+}
+
+sub main {
+
+  my $self = shift;
+  my $opts = my_opts(\@_);
+
+  # Gather status of each session
+
+  $self->print_heading("Sessions");
+  $$self{'sidstat'} ||= $self->get_session_activity();
+
+  # Clean sessions
+
+  if ($$opts{'delete'}) {
+    if (my $node = $Hub->get('/tmp/sessions')) {
+      foreach my $dir ($node->values) {
+        my $sid = addr_name($dir->get_addr);
+        my $is_expired = !$self->is_sid_active($sid);
+        if ($is_expired) {
+          dir_remove($dir->get_path)
+            and $self->print_status('Deleted', $dir->get_path);
+        }
+      }
+    }
+  }
+
+  # Clean credentials
+
+  $self->print_heading("Session Credentials");
+  if (my $node = $Hub->get('/tmp/credentials')) {
+    foreach my $file ($node->values) {
+      my $age = $$self{'now'} - $$file{'mtime'};
+      my $is_expired = $age > $$self{'maxage_session'};
+      my $sid = $$file{'SID'};
+      my $status = $is_expired || !$self->is_sid_active($sid) ? 'Expired' : 'Active';
+      $self->print_status($status, $file->get_addr);
+      if ($$opts{'delete'} && $status eq 'Expired') {
+        file_remove($file->get_path)
+          and $self->print_status('Deleted', $file->get_path);
+      }
+    }
+  }
+
+  # Clean auth tokens
+
+  $self->print_heading("Authentication Tokens");
+  if (my $auth_tokens = $Hub->get("/tmp/auth_tokens.json")) {
+    my @auth_sids = $auth_tokens->keys();
+    foreach my $sid (@auth_sids) {
+      my $addr = addr_join($auth_tokens->get_addr, $sid);
+      my $status = $self->is_sid_active($sid) ? 'Active' : 'Expired';
+      $self->print_status($status, $addr);
+      if ($$opts{'delete'} && $status eq 'Expired') {
+        delete $$auth_tokens{$sid} and
+          $self->print_status('Deleted', $addr);
+      }
+    }
+    $auth_tokens->save();
+  }
+
+  # Clean cache
+
+  $self->print_heading("Request Cache");
+  $self->{'etagstat'} = {};
+  $self->{'sendstat'} = {};
+  if (my $node = $Hub->get('/tmp/response/cache/requests')) {
+    foreach my $dir ($node->values()) {
+      my $acount = $dir->get('meta.json/acount');
+      my $atime = $dir->get('meta.json/atime');
+      my $etag = $dir->get('meta.json/etag');
+      my $send_file = $dir->get('meta.json/send_file');
+      my $age = $$self{'now'} - $atime;
+      my $is_expired = $age > $$self{'maxage_cache'};
+      my $status = $is_expired || $acount == 0 ? 'Expired' : 'Active';
+      $self->print_status($status, $dir->get_addr);
+      $$self{'etagstat'}{$etag} = $status eq 'Active';
+      defined $send_file
+          and $$self{'sendstat'}{$send_file} = $status eq 'Active';
+      if ($$opts{'delete'} && $status eq 'Expired') {
+        dir_remove($dir->get_path)
+          and $self->print_status('Deleted', $dir->get_path);
+      }
+    }
+  }
+
+  # Remove cached response content
+
+  $self->print_heading("Response Cache");
+  if (my $node = $Hub->get('/tmp/response/cache/responses')) {
+    foreach my $file ($node->values()) {
+      my $etag = addr_name($file->get_addr);
+      my $status = $$self{'etagstat'}{$etag} ? 'Active' : 'Expired';
+      $self->print_status($status, $file->get_addr);
+      if ($$opts{'delete'} && $status eq 'Expired') {
+        file_remove($file->get_path)
+          and $self->print_status('Deleted', $file->get_path);
+      }
+    }
+  }
+
+  # Remove unreferenced generated images
+
+  $self->print_heading("Image Cache");
+  if (my $node = $Hub->get('/tmp/response/images')) {
+    foreach my $file ($node->values()) {
+      my $path = $file->get_path;
+      my $status = $$self{'sendstat'}{$path} ? 'Active' : 'Expired';
+      $self->print_status($status, $file->get_addr);
+      if ($$opts{'delete'} && $status eq 'Expired') {
+        file_remove($file->get_path)
+          and $self->print_status('Deleted', $file->get_path);
+      }
+    }
+  }
+
+  # Clean xfr info where state eq 'done'
+
+  $self->print_heading("Upload statuses");
+  if (my $node = $Hub->get('/tmp/xfr')) {
+    foreach my $file ($node->values()) {
+      my $path = $file->get_path;
+      my $state = $file->get('state');
+      my $status = $state =~ /done|failed/ ? 'Expired' : 'Active';
+      $self->print_status($status, $file->get_addr);
+      if ($$opts{'delete'} && $status eq 'Expired') {
+        file_remove($file->get_path)
+          and $self->print_status('Deleted', $file->get_path);
+      }
+    }
+  }
+
+  # Clean tmp/debug
+
+  $self->print_heading("Debug files");
+  if (my $node = $Hub->get('/tmp/debug')) {
+    foreach my $file ($node->values()) {
+      my $path = $file->get_path;
+      my $age = $$self{'now'} - $file->get_mtime;
+      my $is_expired = $age > $$self{'maxage_debug'};
+      my $status = $is_expired ? 'Expired' : 'Active';
+      $self->print_status($status, $file->get_addr);
+      if ($$opts{'delete'} && $status eq 'Expired') {
+        file_remove($file->get_path)
+          and $self->print_status('Deleted', $file->get_path);
+      }
+    }
+  }
+
+  # Rotate logs (handled by server config via rotatelogs)
+
+}
+
+sub print_pair {
+  my $self = shift;
+  $self->printf("  %s: %s\n", @_);
+}
+
+sub print_heading {
+  my $self = shift;
+  $self->printf("%s\n", @_);
+}
+
+our %Status_Colors = (
+  'Deleted' => '_R',
+  'Expired' => '_r',
+  'Active' => '_g',
+);
+
+sub print_status {
+  my $self = shift;
+  my $status = shift;
+  my $message = shift;
+  my $color = $Status_Colors{$status} || '';
+  my $symbol = substr $status, 0, 1;
+  my $line = sprintf "%s: %s", $symbol, $message;
+  $self->printf("  %${color}s\n", $line);
+}
+
+sub is_sid_active {
+  my $self = shift;
+  my $sid = shift;
+  die unless $$self{'sidstat'};
+  $$self{'sidstat'}{$sid};
+}
+
+sub get_session_activity {
+  my $self = shift;
+  my $result = {};
+  if (my $node = $Hub->get('/tmp/sessions')) {
+    foreach my $dir ($node->values) {
+      my $age = $self->{'now'} - $dir->get_mtime;
+      my $is_active = $age <= $$self{'maxage_session'};
+      my $sid = addr_name($dir->get_addr);
+      $$result{$sid} = $is_active;
+      my $status = $is_active ? 'Active' : 'Expired';
+      $self->print_status($status, $sid);
+    }
+  }
+  $result;
+}
+
+sub get_auth_timeout {
+  my $self = shift;
+  my $timeout = '+10m';
+  my @configs = qw(
+    config/livesite.hf
+    config/livesite-base.hf
+  );
+  for (@configs) {
+    $timeout = $Hub->get("$_/handlers/auth/timeout");
+    $timeout and last;
+  }
+  my $seconds = _timeout_to_seconds($timeout);
+  $self->print_pair('Auth timeout', _elapsed($seconds));
+  $seconds;
+}
+
+# ------------------------------------------------------------------------------
+
+sub _elapsed {
+  sprintf '%02d/%02d/%02d %02d:%02d:%02d', time_ymdhms(shift);
+}
+
+our %TimeUnitToSeconds = (
+  s => 1,
+  m => 60,
+  h => 60 * 60,
+  D => 60 * 60 * 24,
+  M => 60 * 60 * 24 * 30,
+  Y => 60 * 60 * 24 * 30 * 12,
+);
+
+sub _timeout_to_seconds {
+  my $timeout = shift or return 0;
+  my ($coefficient, $unit) = $timeout =~ /^\+?(\d+)([YMDhms]?)$/;
+  die "Invalid timeout specifier: $timeout\n" unless defined $unit;
+  my $multiplier = $TimeUnitToSeconds{$unit} || 0;
+  $coefficient * $multiplier;
+}
+
+# ------------------------------------------------------------------------------
+
+package main;
+use Data::Hub qw($Hub);
+use Cwd qw(cwd);
+App::LSN::Reaper->new(cwd())->exec(@ARGV);
+
+__END__
+
+=pod:description
+
+=pod:examples
+
+=cut

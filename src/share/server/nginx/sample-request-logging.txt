@@ -1,0 +1,3 @@
+      log_format                my_tracking $request_body;
+      access_log                /tmp/jboss.access.log my_tracking;
+

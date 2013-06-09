@@ -1,0 +1,253 @@
+#!/usr/bin/perl -w
+package App::LSN::cert;
+use strict;
+use Error::Programatic;
+use Perl::Options qw(my_opts);
+use Data::Hub qw($Hub);
+use Data::Hub::Util qw(:all);
+use Parse::Template::Standard;
+use App::Console::Prompts qw(:all);
+use base 'App::Console::CommandScript';
+
+our $VERSION = 0.01;
+our %USAGE = ();
+our $Parser = Parse::Template::Standard->new($Hub);
+
+our $Config = <<__end;
+[ req ]
+default_bits           = 2048
+default_keyfile        = [#domain].key
+distinguished_name     = req_distinguished_name
+attributes             = req_attributes
+prompt                 = no
+output_password        = [#passwd]
+
+[ req_distinguished_name ]
+C                      = US
+ST                     = [#state]
+L                      = [#city]
+O                      = [#organization]
+CN                     = [#hostname]
+emailAddress           = [#email]
+
+[ req_attributes ]
+challengePassword      = [#passwd]
+__end
+
+# -----------------------------------------------------------------------------
+
+$USAGE{'req'} = {
+  summary => 'Create the certificate-signing request and private key',
+  params => Data::OrderedHash->new(
+    '[domain]' => 'Domain name, e.g., example.com',
+  ),
+};
+
+sub req {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  my $dom = shift || prompt('Domain (e.g., example.com)', -noempty);
+  my $use_existing = -e "$dom.cfg"
+    ? prompt_yN("Use existing: $dom.cfg?")
+    : 0;
+  if (!$use_existing) {
+    my $data = {
+      'domain' => $dom,
+      'subdomain' => prompt('Subdomain (* for wildcard)'),
+      'organization' => prompt('Organization (real name)', -noempty),
+      'city' => prompt('City', -noempty),
+      'state' => prompt('State (full name)', -noempty),
+      'email' => prompt('Email Address', "postmaster\@$dom", -noempty),
+      'passwd' =>  prompt_for_password('Password', -noempty),
+#     'passwd1' =>  prompt_for_password('Passphrase', -noempty),
+#     'passwd2' =>  prompt_for_password('Challenge password', -noempty),
+    };
+    $$data{passwd} =~ s/([\%\@\$])/\\$1/g;
+#   $$data{passwd1} =~ s/([\%\@\$])/\\$1/g;
+#   $$data{passwd2} =~ s/([\%\@\$])/\\$1/g;
+    $$data{hostname} = $$data{subdomain}
+      ? $$data{subdomain} . '.' . $$data{'domain'}
+      : $$data{'domain'};
+    my $out = $Parser->compile_text(\$Config, $data);
+    file_write("$dom.cfg", $out);
+  }
+  my $rc = system "openssl", "req", "-new",
+    "-config", "$dom.cfg", 
+    "-keyout", "$dom.key",
+    "-out", "$dom.csr";
+  $rc != 0 and $self->err_printf("%_Rs\n", 'openssl command failed!');
+  -e "$dom.csr" and $self->printf("%-30s: %_bs\n", "Code-signing certificate", "$dom.csr");
+  -e "$dom.key" and $self->printf("%-30s: %_bs\n", "Private key", "$dom.key");
+  -e "$dom.cfg" and $self->printf("%-30s: %_bs -- %_rs\n", "Configuration", "$dom.cfg", 'CONTAINS CLEARTEXT PASSWORDS!');
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'sign'} = {
+  summary => 'Create a self-signed certificate',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name, e.g., example.com',
+  ),
+};
+
+sub sign {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  my $dom = shift or $self->fail('Missing domain name');
+  my $out = "$dom.crt";
+  my $bundle = 'self_bundle.crt';
+  $self->_depends("$dom.key", "$dom.csr");
+  # Create empty isssuer bundle
+  `touch $bundle`;
+  # Create certificate
+  my @command = qw(openssl x509 -req -days 365);
+  push @command, '-in' => "$dom.csr";
+  push @command, '-signkey' => "$dom.key";
+  push @command, '-out' => $out;
+  my $rc = system @command;
+  $rc != 0 and $self->err_printf("%_Rs\n", 'openssl command failed!');
+  -e $out and $self->printf("%-30s: %_bs\n", "Self-signed certificate", $out);
+  -e $bundle and $self->printf("%-30s: %_bs\n", "Issuer bundle (self)", $bundle);
+}
+
+# ------------------------------------------------------------------------------
+
+$USAGE{'pem'} = {
+  summary => 'Create the .pem file for use with pound and nginx',
+  params => Data::OrderedHash->new(
+    '<domain>' => 'Domain name, e.g., example.com',
+    '<issuer>' => 'Certificate issuer, specifies <issuer>_bundle.crt',
+  ),
+};
+
+sub pem {
+  my $self = shift;
+  my $opts = my_opts(\@_);
+  my $dom = shift or $self->fail('Missing domain name');
+  my $issuer = shift || 'self';
+  $self->_depends("${issuer}_bundle.crt", "$dom.key", "$dom.crt");
+  # Generate passphraseless private key (so that web server can be restarted 
+  # without prompting)
+  my $rc = system "openssl", "rsa", "-in", "$dom.key", "-out", "$dom.key.nopass";
+  # Generate Apache-style certificate chain
+  $self->_concat("$dom.pem", "$dom.key.nopass", "$dom.crt", "${issuer}_bundle.crt"); # order is important
+  $self->_concat("$dom.nginx.pem", "$dom.crt", "${issuer}_bundle.crt"); # order is important
+  # Show output files
+  -e "$dom.pem" and $self->printf("%-30s: %_bs\n", "Chained certificate (Apache)", "$dom.pem");
+  -e "$dom.nginx.pem" and $self->printf("%-30s: %_bs\n", "Chained certificate (NGiNX)", "$dom.nginx.pem");
+  -e "$dom.key.nopass" and $self->printf("%-30s: %_bs -- %_rs\n",
+    "Private key (NGiNX)", "$dom.key.nopass", 'NO PASSPHRASE');
+}
+
+sub _depends {
+  my $self = shift;
+  my @missing = ();
+  foreach my $fn (@_) {
+    push @missing, $fn unless -e $fn;
+  }
+  @missing and $self->fail(sprintf("Missing file(s): %s", join(', ', @missing)));
+}
+
+sub _concat {
+  my $self = shift;
+  my $out_fn = shift;
+  my $content = '';
+  for (@_) {
+    $self->fail("Missing file: $_") unless -e $_;
+    my $c = file_read($_);
+    if ($c && $$c) {
+      my $text = $$c;
+      chomp $text;
+      $content .= $text . "\n";
+    } else {
+      $self->err_print("No file content: $_\n")
+    }
+  }
+  # Write output
+  if (-e "$out_fn") {
+    file_move("$out_fn", "$out_fn.bak") if (!-e "$out_fn.bak"
+      || prompt_yN("Replace existing backup '$out_fn.bak'"))
+  }
+  if (-e "$out_fn") {
+    $self->fail('Aborted') unless prompt_yN("Overwrite '$out_fn'");
+  }
+  file_write("$out_fn", $content);
+}
+
+# ------------------------------------------------------------------------------
+
+package main;
+use Data::Hub qw($Hub);
+App::LSN::cert->new()->exec(@ARGV);
+
+__END__
+
+=head1 Description
+
+1) Change to a nice clean working directory:
+
+  lsn-cert req example.com
+
+2) Send the signing-request (example.com.csr) to the certificate authority and 
+obtain the signed certificate (example.com.crt) along with the authorities 
+bundle (e.g., gd_bundle.crt for GoDaddy) and place those files in this working 
+directory.
+
+3) Now generate the PEM with the following command.  The second parameter (issuer) 
+is simply the prefix to the _bundler.crt file, in this case gd for GoDaddy:
+
+  lsn-cert pem example.com gd
+
+4) You now have a PEM file which is placed in the config/ssl subdirectory of the 
+domain's home directory.  Now you may cleanup this nice clean-up and/or archive 
+working directory.  Note that the file example.com.cfg contains the clear-text 
+passwords you entered.
+
+=head1 Example
+
+  devbox ryan ~/tmp/cert
+  $ lsn-cert req example.com
+  Organization: ABC, Inc
+  City: Seattle
+  State: WA
+  Passphrase:
+       again:
+  Challenge password:
+               again:
+  Generating a 2048 bit RSA private key
+  ........+++
+  .....................................................+++
+  writing new private key to 'example.com.key'
+  -----
+  Code-signing certificate : example.com.csr
+  Private key              : example.com.key
+  Configuration            : example.com.cfg -- CONTAINS CLEARTEXT PASSWORDS!
+  devbox ryan ~/tmp/cert
+  $ unzip ../example.com.zip 
+  Archive:  ../example.com.zip
+    inflating: example.com.crt         
+    inflating: gd_bundle.crt           
+  devbox ryan ~/tmp/cert
+  $ lsn-cert pem example.com gd
+  Enter pass phrase for example.com.key:
+  writing RSA key
+  devbox ryan ~/tmp/cert
+  $ ll
+  total 32K
+  -rw-r--r--. 1 ryan users  556 2010-06-04 18:22 example.com.cfg
+  -rw-r--r--. 1 ryan users 1.8K 2010-06-04 18:24 example.com.crt
+  -rw-r--r--. 1 ryan users 1.1K 2010-06-04 18:22 example.com.csr
+  -rw-r--r--. 1 ryan users 1.8K 2010-06-04 18:22 example.com.key
+  -rw-r--r--. 1 ryan users 8.0K 2010-06-04 18:26 example.com.pem
+  -rw-r--r--. 1 ryan users 4.6K 2010-06-04 18:23 gd_bundle.crt
+
+=head1 NGiNX
+
+The ssl module in nginx requires the key to be a separate file (where with
+apache you can list it as the first segment of the .pem).  So, this is what
+I put into the nginx.conf:
+
+   ssl_certificate             example.com.nginx.pem;
+   ssl_certificate_key         example.com.key.nopass;
+
+=cut

@@ -1,0 +1,15 @@
+[#:http:no-cache]
+[#:into /res/layouts/xhtml+lsn]
+[#:js event='document, load']
+  new js.lsn.ui.LoginDialog().show({
+    onSuccessUri: window.location.href
+  });
+[#:end js]
+[#:css]
+#body[#UID] {margin:.5em;}
+[#:end css]
+<div id="body[#UID]">
+<noscript>JavaScript and Cookies are required</noscript>
+</div>
+__DATA__
+browser_title => Login

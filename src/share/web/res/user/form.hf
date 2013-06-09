@@ -1,0 +1,59 @@
+# HashFile 2.1
+
+action => /res/user/module.pm/update
+fieldsets => @{
+  %{
+    heading => General
+    fields => %{
+      real_name => %{
+        label => Real Name
+        type => text
+      }
+      email => %{
+        label => Email Address
+        type => text
+      }
+#{
+      resetpw => %{
+        label => Reset Password
+        type => yesno
+        default => 0
+      }
+      new_password => %{
+        display-if => resetpw
+        label => New password
+        type => password
+      }
+      new_password => %{
+        display-if => resetpw
+        label => New password (again)
+        type => password
+      }
+#}
+    }
+  }
+#{
+  %{
+    heading => Sending Mail
+    fields => %{
+      prefs/smtp/server => %{
+        label => SMTP Server
+        type => text
+      }
+      prefs/smtp/auth_type => %{
+        label => Authentication type
+        type => hidden
+        val => LOGIN
+      }
+      prefs/smtp/auth_user => %{
+        label => Username
+        type => text
+      }
+      prefs/smtp/auth_pass => %{
+        label => Password
+        type => password
+      }
+    }
+  }
+#}
+}

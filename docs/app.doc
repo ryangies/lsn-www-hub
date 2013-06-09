@@ -1,0 +1,23 @@
+# HashFile 2.1
+defs => @{
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => lsn.app
+    type => namespace
+    id => js.lsn.app
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Application
+    type => class
+    id => js.lsn.app.Application
+    depth => 4
+  }
+}

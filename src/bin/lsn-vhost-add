@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# Defaults
+dn=
+mods=www,livesite
+conf=${LSN_CONFIG_DIR:-/etc/livesite}
+vhdir=${LSN_VHOST_DIR:-/var/www/vhosts}
+
+# usage - Display command usage
+function usage () {
+  name=$(basename $0)
+  cat <<__end
+usage:
+  $name [-h|--help]
+  $name [options] domain-name
+about:
+  $name will perform all the steps required to add a virtual domain to
+  the web server.
+options:
+  -mod name         Add name to the features list
+examples:
+  $name example.com
+  $name -mod svn -mod dav example.com
+__end
+}
+
+while [ $# -gt 0 ]; do
+  case $1 in 
+    -\?|--help)         usage; exit 0;;
+    -mod)               shift; modules="$mods,$1"; shift;;
+    -*)                 usage; exit 1;;
+    [^-]*)              break;; 
+  esac
+done      
+
+if [ $# -le 0 ]; then
+  usage
+  exit 0
+fi
+
+# Domain name
+dn=$1
+
+if [ ! -d "$vhdir" ]; then
+  echo "Directory not found: $vhdir"
+  exit 0
+fi
+
+if [ -z "$dn" ]; then
+  echo "Domain name not specified (try --help)"
+  exit 0
+fi
+
+echo "Domain: ${dn}" > /dev/stderr
+
+cd $conf
+lsn-server-config add $dn
+lsn-server-config init $dn
+lsn-server-config update $dn -enable=$mods
+lsn-server-config initd $dn
+cd $vhdir/$dn
+lsn-setup config
+lsn-setup setpass
+lsn-server-config chown $dn
+if [ $(getenforce) == 'Enforcing' ]; then
+  # The context 'httpd_sys_rw_content_t' was not defined on the CentOS box
+  # used by krfy.org.
+  # TODO this logic should also be in the chown command of lsn-server-config
+  # and lsn-setup
+  semanage fcontext -a -t httpd_sys_rw_content_t "$vhdir/$dn"
+  restorecon -v "$vhdir/$dn"
+fi
+echo "* Import/create $vhdir/$dn/htdocs" > /dev/stderr
+echo "* Restart proxy server" > /dev/stderr
+echo "* Start Apache: /etc/livesite/init.d/$dn start" > /dev/stderr

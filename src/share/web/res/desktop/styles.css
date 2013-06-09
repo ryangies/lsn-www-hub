@@ -1,0 +1,75 @@
+[#:use ./colors.hf/livesite]
+
+html,
+body {
+  overflow: hidden;
+}
+
+body {
+  background-color: [#bg_body];
+}
+
+iframe {
+  position: absolute;
+  border: none;
+  display: none;
+}
+
+iframe.right {
+  border-left: 1px solid [#color3];
+}
+
+#all-tabs.top {
+  background: [#bg_med];
+}
+
+#all-tabs {
+  border-bottom: 1px solid [#color3];
+}
+
+#lh-tabs {
+  z-index: 1;
+}
+
+#rh-tabs {
+  position: absolute;
+  z-index: 2;
+  right: 10px;
+}
+
+.tabs {
+  margin: 0px;
+  padding-top: 8px;
+  padding-left: 10px;
+}
+
+.tabs li {
+  margin: 0 0 0 5px;
+  border: 1px solid [#color3]; 
+  background-color: [#bg_light];
+  white-space: nowrap;
+  display: inline;
+  padding: 0;
+  list-style: none;
+}
+
+li.current {
+  background: [#bg_body];
+  border: 1px solid [#color3]; 
+  border-bottom: 1px solid [#bg_body]; 
+}
+
+.tabs li a {
+  padding: 0 4px 0 4px;
+  text-decoration: none;
+}
+
+.tabs li a:hover {
+  text-decoration: none;
+}
+
+.tabs a.closer img {
+  position: relative;
+  top: 1px;
+  _top: 0;
+}

@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+package main;
+use strict;
+use warnings FATAL => qw(all);
+use App::Console::Color qw(:all);
+use Data::Hub qw($Hub);
+use Data::Hub::Util qw(:all);
+
+our @Entries = ();
+our @Result = ();
+
+sub _usage {
+print <<__end;
+usage: $0
+       $0 -?|-h|-help|--help
+__end
+}
+
+# Command-line options
+while (@ARGV) {
+  my $arg = shift @ARGV;
+  if ($arg =~ s/^-//) {
+    if ($arg eq '?' || $arg eq 'h' || $arg eq '-help' || $arg eq 'help') {
+      exit _usage();
+    }
+    next;
+  }
+  die "Unknown option: $arg\n";
+}
+
+# Read request metadata
+$Hub->get('/requests/*/meta.json')->iterate(sub {
+  my ($k, $meta) = @_;
+  push @Entries, {
+    %$meta,
+    'rtag' => addr_shift($k),
+  };
+});
+
+foreach my $meta (sort {$$a{'uri'} cmp $$b{'uri'}} @Entries) {
+  printf "%12s: %s\n", $$meta{'rtag'}, $$meta{'uri'};
+}

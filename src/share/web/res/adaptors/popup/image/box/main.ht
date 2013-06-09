@@ -1,0 +1,40 @@
+[#:css]
+#[#UID2] { position:relative; border-collapse:collapse; }
+#[#UID2] tr.cap td { font-size:1px; line-height:1px; }
+#[#UID2] td.horiz { background-repeat:repeat-x; height:15px; overflow:hidden; }
+#[#UID2] td.vert { background-repeat:repeat-y; width:15px; overflow:hidden; }
+#[#UID2] td.corner,
+#[#UID2] td.horiz,
+#[#UID2] td.vert { vertical-align:top; margin:0; padding:0; }
+#[#UID2] td.middle { vertical-align:top; background-color:white; padding:0 6px 6px 0; }
+#[#UID2] td.corner img { display:block; border:none; margin:0; padding:0; }
+[#:end css]
+<!--[if lte IE 9.0]>
+<style type="text/css">
+/* PNG Transpancy becomes black when displayed on top of a mask with opacity */
+#[#UID2] td.corner img,
+#[#UID2] td.horiz,
+#[#UID2] td.vert { visibility:hidden; }
+#[#UID2] td.middle { padding:6px; }
+</style>
+<![endif]-->
+<table id="[#UID2]">
+  <tbody>
+    <tr class="cap">
+      <td class="corner"><img width="15" height="15" src="[#`./nw.png`]"/></td>
+      <td class="horiz" style="background-image:url([#`./n.png`])"></td>
+      <td class="corner"><img width="15" height="15" src="[#`./ne.png`]"/></td>
+    </tr>
+    <tr>
+      <td class="vert" style="background-image:url([#`./w.png`])"></td>
+      <td class="middle">[#CONTENT]</td>
+      <td class="vert" style="background-image:url([#`./e.png`])"></td>
+    </tr>
+    <tr class="cap">
+      <td class="corner"><img width="15" height="15" src="[#`./sw.png`]"/></td>
+      <td class="horiz" style="background-image:url([#`./s.png`])"></td>
+      <td class="corner"><img width="15" height="15" src="[#`./se.png`]"/></td>
+    </tr>
+  </tbody>
+</table>
+<!--[if lte IE 6.5]><iframe width="0" height="0" src="about:blank"></iframe><![endif]-->

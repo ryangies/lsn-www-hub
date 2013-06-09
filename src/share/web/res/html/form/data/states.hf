@@ -1,0 +1,300 @@
+# HashFile 2.1
+map => %{
+  AL => AL - Alabama
+  AK => AK - Alaska
+  AS => AS - American Samoa
+  AZ => AZ - Arizona
+  AR => AR - Arkansas
+  CA => CA - California
+  CO => CO - Colorado
+  CT => CT - Connecticut
+  DE => DE - Delaware
+  DC => DC - District Of Columbia
+  FM => FM - Federated States Of Micronesia
+  FL => FL - Florida
+  GA => GA - Georgia
+  GU => GU - Guam
+  HI => HI - Hawaii
+  ID => ID - Idaho
+  IL => IL - Illinois
+  IN => IN - Indiana
+  IA => IA - Iowa
+  KS => KS - Kansas
+  KY => KY - Kentucky
+  LA => LA - Louisiana
+  ME => ME - Maine
+  MH => MH - Marshall Islands
+  MD => MD - Maryland
+  MA => MA - Massachusetts
+  MI => MI - Michigan
+  MN => MN - Minnesota
+  MS => MS - Mississippi
+  MO => MO - Missouri
+  MT => MT - Montana
+  NE => NE - Nebraska
+  NV => NV - Nevada
+  NH => NH - New Hampshire
+  NJ => NJ - New Jersey
+  NM => NM - New Mexico
+  NY => NY - New York
+  NC => NC - North Carolina
+  ND => ND - North Dakota
+  MP => MP - Northern Mariana Islands
+  OH => OH - Ohio
+  OK => OK - Oklahoma
+  OR => OR - Oregon
+  PW => PW - Palau
+  PA => PA - Pennsylvania
+  PR => PR - Puerto Rico
+  RI => RI - Rhode Island
+  SC => SC - South Carolina
+  SD => SD - South Dakota
+  TN => TN - Tennessee
+  TX => TX - Texas
+  UT => UT - Utah
+  VT => VT - Vermont
+  VI => VI - Virgin Islands
+  VA => VA - Virginia
+  WA => WA - Washington
+  WV => WV - West Virginia
+  WI => WI - Wisconsin
+  WY => WY - Wyoming
+}
+list => @{
+  %{
+    text => AL - Alabama
+    value => AL
+  }
+  %{
+    text => AK - Alaska
+    value => AK
+  }
+  %{
+    text => AS - American Samoa
+    value => AS
+  }
+  %{
+    text => AZ - Arizona
+    value => AZ
+  }
+  %{
+    text => AR - Arkansas
+    value => AR
+  }
+  %{
+    text => CA - California
+    value => CA
+  }
+  %{
+    text => CO - Colorado
+    value => CO
+  }
+  %{
+    text => CT - Connecticut
+    value => CT
+  }
+  %{
+    text => DE - Delaware
+    value => DE
+  }
+  %{
+    text => DC - District Of Columbia
+    value => DC
+  }
+  %{
+    text => FM - Federated States Of Micronesia
+    value => FM
+  }
+  %{
+    text => FL - Florida
+    value => FL
+  }
+  %{
+    text => GA - Georgia
+    value => GA
+  }
+  %{
+    text => GU - Guam
+    value => GU
+  }
+  %{
+    text => HI - Hawaii
+    value => HI
+  }
+  %{
+    text => ID - Idaho
+    value => ID
+  }
+  %{
+    text => IL - Illinois
+    value => IL
+  }
+  %{
+    text => IN - Indiana
+    value => IN
+  }
+  %{
+    text => IA - Iowa
+    value => IA
+  }
+  %{
+    text => KS - Kansas
+    value => KS
+  }
+  %{
+    text => KY - Kentucky
+    value => KY
+  }
+  %{
+    text => LA - Louisiana
+    value => LA
+  }
+  %{
+    text => ME - Maine
+    value => ME
+  }
+  %{
+    text => MH - Marshall Islands
+    value => MH
+  }
+  %{
+    text => MD - Maryland
+    value => MD
+  }
+  %{
+    text => MA - Massachusetts
+    value => MA
+  }
+  %{
+    text => MI - Michigan
+    value => MI
+  }
+  %{
+    text => MN - Minnesota
+    value => MN
+  }
+  %{
+    text => MS - Mississippi
+    value => MS
+  }
+  %{
+    text => MO - Missouri
+    value => MO
+  }
+  %{
+    text => MT - Montana
+    value => MT
+  }
+  %{
+    text => NE - Nebraska
+    value => NE
+  }
+  %{
+    text => NV - Nevada
+    value => NV
+  }
+  %{
+    text => NH - New Hampshire
+    value => NH
+  }
+  %{
+    text => NJ - New Jersey
+    value => NJ
+  }
+  %{
+    text => NM - New Mexico
+    value => NM
+  }
+  %{
+    text => NY - New York
+    value => NY
+  }
+  %{
+    text => NC - North Carolina
+    value => NC
+  }
+  %{
+    text => ND - North Dakota
+    value => ND
+  }
+  %{
+    text => MP - Northern Mariana Islands
+    value => MP
+  }
+  %{
+    text => OH - Ohio
+    value => OH
+  }
+  %{
+    text => OK - Oklahoma
+    value => OK
+  }
+  %{
+    text => OR - Oregon
+    value => OR
+  }
+  %{
+    text => PW - Palau
+    value => PW
+  }
+  %{
+    text => PA - Pennsylvania
+    value => PA
+  }
+  %{
+    text => PR - Puerto Rico
+    value => PR
+  }
+  %{
+    text => RI - Rhode Island
+    value => RI
+  }
+  %{
+    text => SC - South Carolina
+    value => SC
+  }
+  %{
+    text => SD - South Dakota
+    value => SD
+  }
+  %{
+    text => TN - Tennessee
+    value => TN
+  }
+  %{
+    text => TX - Texas
+    value => TX
+  }
+  %{
+    text => UT - Utah
+    value => UT
+  }
+  %{
+    text => VT - Vermont
+    value => VT
+  }
+  %{
+    text => VI - Virgin Islands
+    value => VI
+  }
+  %{
+    text => VA - Virginia
+    value => VA
+  }
+  %{
+    text => WA - Washington
+    value => WA
+  }
+  %{
+    text => WV - West Virginia
+    value => WV
+  }
+  %{
+    text => WI - Wisconsin
+    value => WI
+  }
+  %{
+    text => WY - Wyoming
+    value => WY
+  }
+}

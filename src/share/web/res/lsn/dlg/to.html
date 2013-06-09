@@ -1,0 +1,30 @@
+[#:js src=`./js/To.js`]
+
+<div id="[#UID2]">
+  <div>
+    <span id="toaddr[#UID2]"></span>
+  </div>
+  <div id="list[#UID2]" class="tmar"></div>
+  <div class="tmar">
+    <label for="name[#UID2]">Name:</label>
+    <input id="name[#UID2]" name="values/name"/>
+  </div>
+</div>
+
+[#:css]
+#[#UID2] {width:30em;}
+#list[#UID2] {width:29.5em;height:15em;position:relative;overflow:auto;}
+#name[#UID2] {width:26em;padding:0 .2em;}
+#list[#UID2], #name[#UID2] {border:1px inset gray;}
+#[#UID2] .tmar {margin-top:.4em;}
+#[#UID2] .err {color:red;}
+[#:end css]
+
+[#:js event='dialog,ready']
+  js.lsn.ext.dlg.To.apply(this, [{
+    addr: js.dom.getElement('toaddr[#UID2]'),
+    tree: js.dom.getElement('list[#UID2]'),
+    name: js.dom.getElement('name[#UID2]'),
+    btnOk: js.dom.getElement('btn_[#UID]_ok')
+  }]);
+[#:end js]

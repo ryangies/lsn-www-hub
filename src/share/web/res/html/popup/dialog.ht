@@ -1,0 +1,43 @@
+<div id="[#_content_id]">
+  <div class="popup-border">
+    <div class="popup-area">
+      <div class="popup-header">
+        <div class="popup-buttons">
+          <a href="#close" rel="action">[#:html:image `./btn-close.png` border='0' alt='Close']</a>
+        </div>
+        <div id="move-handle" class="popup-title">
+          [#:if _icon][#:html:image _icon][#:end if] [#_title || 'No title']
+        </div>
+      </div>
+      <div class="popup-content">[#CONTENT || 'No content']</div>
+    </div>
+  </div>
+  <!--[if lte IE 6.5]><iframe width="0" height="0" src="about:blank"></iframe><![endif]-->
+</div>
+[#:use /res/palettes/xwin.hf]
+[#:use /res/css/snippets.hf]
+[#:css]
+#[#_content_id] .popup-border {
+  position:relative;
+  border:1px solid [#gray50];
+  border-radius:3px;
+  [#box-shadow blur='8px', color => gray80]
+  [#linear-gradient color0 => white, color1 => gray98]
+}
+#[#_content_id] .popup-area { position:relative; }
+#[#_content_id] .popup-header {
+  position:relative;
+  padding:10px;
+  border-bottom:1px solid [#gray50];
+  [#linear-gradient color0=gray95 color1=gray90]
+}
+#[#_content_id] .popup-content {
+  text-align:left;
+  padding:10px;
+}
+#[#_content_id] .popup-title { text-align: left; margin-right:20px; font-weight:bold; }
+#[#_content_id] .popup-title * { vertical-align:text-bottom; }
+#[#_content_id] .popup-buttons { position:absolute; right:10px; height:20px; }
+#[#_content_id] .popup-buttons img { display:block; }
+[#:end css]
+

@@ -1,0 +1,2411 @@
+# HashFile 2.1
+defs => @{
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Package definition and extension manager for ECMA scripts. This 
+      }
+      @{
+        *
+        implementation considers each package to be an instantiable component
+      }
+      @{
+        *
+        that is provided a pointer back to the library instance for which it is 
+      }
+      @{
+        *
+        being created.  The intentions are to:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        1. Provide management which enables one to division their code into logical
+      }
+      @{
+        *
+        packages and avoid clobbering global variables.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        2. Scope the C<window> and C<document> objects such that one may instantiate
+      }
+      @{
+        *
+        the library to act upon a child window, i.e., an IFRAME, without changing
+      }
+      @{
+        *
+        its dependencies nor incurring the cost of additional HTTP connections to
+      }
+      @{
+        *
+        script files.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Packages may contain local private variables, classes, and functions. 
+      }
+      @{
+        *
+        Namespaces are extendable, allowing the end product to avoid naming 
+      }
+      @{
+        *
+        collisions. Each library instance may operate upon separate window and 
+      }
+      @{
+        *
+        document objects.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        The ECMAScript package contains minimal code, just enough to provide:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        1. A method for creating and extending namespaces with your own packages:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ L<ECMAScript.Extend>('namespace', package);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        2. A way to create new library instances which act upon target windows and 
+      }
+      @{
+        *
+        their documents:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var js = new L<ECMAScript.Class>(window, document);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ECMAScript does not implement any namespaces itself and can be used to build
+      }
+      @{
+        *
+        a library from the ground up.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => ECMAScript
+    type => global
+    id => ECMAScript
+    depth => 1
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        About message is a semi-colon delimited string of informational fields,
+      }
+      @{
+        *
+        which take the form:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ <name>;<version>;<packages>
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Where:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ <name>        Common name for this library
+        }
+      }
+      @{
+        *
+        ${
+ <version>     Numeric version to three decimal places
+        }
+      }
+      @{
+        *
+        ${
+ <packages>    Comma-delimited string of package namespaces
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Example output:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ ECMAScript;0.004;lang,util,crypt,console,data,http,dom
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => About
+    type => function
+    id => ECMAScript.About
+    depth => 2
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Construct a new library instance.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ @param window   <HTMLWindowElement>   Only requried/used with HTML-DOM JavaScript
+        }
+      }
+      @{
+        *
+        ${
+ @param document <HTMLDocumentElement> Only requried/used with HTML-DOM JavaScript
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var js = new ECMAScript.Class(window, document);
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => Class
+    type => class
+    id => ECMAScript.Class
+    depth => 2
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Extend (or define) a top-level ECMAScript namespace, i.e., extend the
+      }
+      @{
+        *
+        library by either adding to or creating a package.  Extensions will be
+      }
+      @{
+        *
+        applied to all running instance, allowing one load additional packages
+      }
+      @{
+        *
+        on demand.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ @param namespace    <String>    e.g., 'util', 'com', 'org.gnu'
+        }
+      }
+      @{
+        *
+        ${
+ @param constructor  <Function>  See "Package Constructor Function" below
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        =
+        ${
+ ECMAScript.Extend('util', function (ecma) {         // namespace 'util'
+        }
+      }
+      @{
+        =
+        ${
+  
+        }
+      }
+      @{
+        =
+        ${
+   this.say = function (message) {                   // public function
+        }
+      }
+      @{
+        =
+        ${
+     alert(message);
+        }
+      }
+      @{
+        =
+        ${
+   \}
+        }
+      }
+      @{
+        =
+        ${
+
+        }
+      }
+      @{
+        =
+        ${
+ \});
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        The code above specifies the namespace 'util' which is extended (or 
+      }
+      @{
+        *
+        defined if it has not been). This function is now available as:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ js.util.say('Hello World');
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        \#
+        Package Constructor Function
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        The package constructor function is passed a reference to the library 
+      }
+      @{
+        *
+        instance L<ECMAScript.Class> which is creating it.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Rather than using function prototypes, the package constructor function
+      }
+      @{
+        *
+        defines its methods in the function body.  This creates closures which
+      }
+      @{
+        *
+        brings the current ECMAScript library instance (arguments[0]) in to scope
+      }
+      @{
+        *
+        and also allows the package to have private member variables.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ ECMAScript.Extend('util', function (ecma) {
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+   var _err = "Message is undefined";                // private var
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+   this.say = function (message) {
+        }
+      }
+      @{
+        *
+        ${
+     if (!message) {
+        }
+      }
+      @{
+        =
+        ${
+       ecma.console.log(_err);                       // ecma is used
+        }
+      }
+      @{
+        *
+        ${
+     \} else {
+        }
+      }
+      @{
+        *
+        ${
+       alert(message);
+        }
+      }
+      @{
+        *
+        ${
+     \}
+        }
+      }
+      @{
+        *
+        ${
+   \};
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ \});
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        This constructor pattern is necessary for scoping, i.e., allowing access to the
+      }
+      @{
+        *
+        current ECMAScript library instance.  Creating these closures does not 
+      }
+      @{
+        *
+        create a critical memory hole because these are singleton packages in
+      }
+      @{
+        *
+        respect to the number of running documents.
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => Extend
+    type => function
+    id => ECMAScript.Extend
+    depth => 2
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        A global instance of the library running under the context of the current 
+      }
+      @{
+        *
+        window and document:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var js = new L<ECMAScript.Class>(window, document);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        From the perspective of the code which B<uses> the library we refer to the
+      }
+      @{
+        *
+        running instance as C<js>.  The name C<js> is not set in stone, it is simply
+      }
+      @{
+        *
+        the default name with which the library is built.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ js.console.log("Hello World");    // Normal usage
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        From the perspective of the packages which make up the library, we refer
+      }
+      @{
+        *
+        to the running instance as C<ecma>.  The name C<ecma> is not set in stone,
+      }
+      @{
+        *
+        it is simply the default parameter name which we have standardized upon.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        =
+        ${
+ ecma.console.log("Hello World");  // Calling from inside a library package
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => js
+    type => global
+    id => js
+    depth => 1
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => error
+    type => namespace
+    id => js.error
+    depth => 2
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Indicates an assertion failed.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ throw new ecma.error.Assertion();
+        }
+      }
+      @{
+        *
+        ${
+ throw new ecma.error.Assertion(message);
+        }
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => Assertion
+    type => class
+    id => js.error.Assertion
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Indicates a function argument is not correct.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ throw new ecma.error.IllegalArg(name);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Where C<name> indicates the name of the offending argument.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => IllegalArg
+    type => class
+    id => js.error.IllegalArg
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Indicates a required function argument was not provided.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ throw new ecma.error.MissingArg(name);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Where C<name> indicates the name of the missing argument.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => MissingArg
+    type => class
+    id => js.error.MissingArg
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Indicates multiple exceptions occured.  Used in the case where throwing
+      }
+      @{
+        *
+        each exception at the time would prevent critical code from executing.
+      }
+      @{
+        *
+        For instance, when applying callback functions (listeners).
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ throw new ecma.error.Multiple(array);
+        }
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => Multiple
+    type => class
+    id => js.error.Multiple
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        ECMA language.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => lang
+    type => namespace
+    id => js.lang
+    depth => 2
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Throw an exception if expression is false.
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => assert
+    type => function
+    id => js.lang.assert
+    depth => 3
+  }
+  %{
+    props => %{
+      param => @{
+        func    <Function|Array> Callback function L<1>
+        scope   <Object> Default scope
+        args    <Array> Arguments L<2>
+      }
+    }
+    content => @{
+      @{
+        *
+        Apply a callback function.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var result = ecma.lang.callback(func);
+        }
+      }
+      @{
+        *
+        ${
+ var result = ecma.lang.callback(func, scope);
+        }
+      }
+      @{
+        *
+        ${
+ var result = ecma.lang.callback(func, scope, args);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ func    <Function|Array> Callback function L<1>
+        }
+      }
+      @{
+        *
+        ${
+ scope   <Object> Default scope
+        }
+      }
+      @{
+        *
+        ${
+ args    <Array> Arguments L<2>
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        N<1> When C<func> is an array, it is taken to conform to this standard
+      }
+      @{
+        *
+        structure:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ func[0]       <Function>  Callback function
+        }
+      }
+      @{
+        *
+        ${
+ func[1]       <Object>    Scope (optional) L<2>
+        }
+      }
+      @{
+        *
+        ${
+ func[2]       <Array>     Arguments (optional) L<3>
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        This allows one to pass around callbacks as arrays, then use this method to
+      }
+      @{
+        *
+        apply them.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        N<2> If the inner scope is not defined, the outer is used.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        N<3> The parameters in the outer C<args> array precede those in the inner
+      }
+      @{
+        *
+        C<func> array should C<func> be an array.  This is done as the inner
+      }
+      @{
+        *
+        arguments are caller-defined, and hence more variable.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        \#
+        Example
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ function MyClass () {};
+        }
+      }
+      @{
+        *
+        ${
+ MyClass.prototype = {
+        }
+      }
+      @{
+        *
+        ${
+   'run': function (cb) {
+        }
+      }
+      @{
+        *
+        ${
+     // do something
+        }
+      }
+      @{
+        *
+        ${
+     ecma.lang.callback(cb, this, [1, 2, 3]);
+        }
+      }
+      @{
+        *
+        ${
+   \}
+        }
+      }
+      @{
+        *
+        ${
+ \};
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ function onComplete () {
+        }
+      }
+      @{
+        *
+        ${
+   for (var i = 0; i < arguments.length; i++) {
+        }
+      }
+      @{
+        *
+        ${
+     ecma.console.log('arguments [' + i + '] = ' + arguments[i]);
+        }
+      }
+      @{
+        *
+        ${
+   \}
+        }
+      }
+      @{
+        *
+        ${
+ \}
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var obj = new MyClass();
+        }
+      }
+      @{
+        \#
+        ${
+ obj.run([onComplete, this, ['a', 'b', 'c']])
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Will output:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ arguments[0] = 1
+        }
+      }
+      @{
+        *
+        ${
+ arguments[1] = 2
+        }
+      }
+      @{
+        *
+        ${
+ arguments[2] = 3
+        }
+      }
+      @{
+        *
+        ${
+ arguments[3] = a
+        }
+      }
+      @{
+        *
+        ${
+ arguments[4] = b
+        }
+      }
+      @{
+        *
+        ${
+ arguments[5] = c
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Additionally, the calling code could also:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        \#
+        ${
+ obj.run(onComplete);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Which would output:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ arguments[0] = 1
+        }
+      }
+      @{
+        *
+        ${
+ arguments[1] = 2
+        }
+      }
+      @{
+        *
+        ${
+ arguments[2] = 3
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Or, say it creates its own callback function:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var cb = ecma.lang.createCallback(onComplete, this, ['x', 'y']);
+        }
+      }
+      @{
+        \#
+        ${
+ obj.run(cb);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Which would output:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ arguments[0] = 1
+        }
+      }
+      @{
+        *
+        ${
+ arguments[1] = 2
+        }
+      }
+      @{
+        *
+        ${
+ arguments[2] = 3
+        }
+      }
+      @{
+        *
+        ${
+ arguments[3] = x
+        }
+      }
+      @{
+        *
+        ${
+ arguments[4] = y
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => callback
+    type => function
+    id => js.lang.callback
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Creates a function which throws an exception when called.
+      }
+      @{
+        *
+        ${
+ this.method = ecma.lang.createAbstractFunction();
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => createAbstractFunction
+    type => function
+    id => js.lang.createAbstractFunction
+    depth => 3
+  }
+  %{
+    props => %{
+      param => @{
+        func <Function> to call back
+        scope <Scope> to apply the callback
+        args <Array> (optional) arguments which will be passed *after* the caller's.
+      }
+    }
+    content => @{
+      @{
+        *
+        Create a callback function.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ func <Function> to call back
+        }
+      }
+      @{
+        *
+        ${
+ scope <Scope> to apply the callback
+        }
+      }
+      @{
+        *
+        ${
+ args <Array> (optional) arguments which will be passed *after* the caller's.
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var cb = ecma.lang.createCallback(this.refresh, this, [arg1, arg2]);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Note that window.setTimeout and window.setInterval pass the number of
+      }
+      @{
+        *
+        seconds late as the first argument.  To avoid this, use L<ecma.dom.setTimeout>
+      }
+      @{
+        *
+        and L<ecma.dom.setInterval>.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => createCallback
+    type => function
+    id => js.lang.createCallback
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Create a callback array.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ [func, scope, args] = ecma.lang.createCallbackArray(func, scope, args);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        This method unwraps C<func> when it is already a callback array.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        See L<ecma.lang.callback>
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => createCallbackArray
+    type => function
+    id => js.lang.createCallbackArray
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Return an instance of a proxied constructor.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Allows one to use the basic ECMAScript inheritance model without
+      }
+      @{
+        *
+        calling the base class' constructor.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var MyClass = function () { ... };
+        }
+      }
+      @{
+        *
+        ${
+ MyClass.prototype = js.lang.createMethods(BaseClass);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Also implements a multiple inheritence model.  With single inheritence,
+      }
+      @{
+        *
+        the C<instanceof> operator will work as expected.  With multiple
+      }
+      @{
+        *
+        inhertience, only the first base class is recognized.  As such,
+      }
+      @{
+        *
+        L<ecma.util.isa> must be used to intergate all bases.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var MyClass = function () { ... };
+        }
+      }
+      @{
+        *
+        ${
+ MyClass.prototype = js.lang.createMethods(BaseClass1, BaseClass2);
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => createMethods
+    type => function
+    id => js.lang.createMethods
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Common utility functions.
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => util
+    type => namespace
+    id => js.util
+    depth => 2
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Create an Array comprised of Function.arguments elements.
+      }
+      @{
+        *
+        ${
+ @param args arguments object
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => args
+    type => member
+    id => js.util.args
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Integer representation of the provided unkown
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ @param unk The unknown
+        }
+      }
+      @{
+        *
+        ${
+ @param gez true|false, only return a value greater-than or equal to zero
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        =
+        NaN is returned as 0.
+      }
+      @{
+        =
+        When 'gez' is in effect, negative numbers are returned as 0.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => asInt
+    type => member
+    id => js.util.asInt
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Return true unless the variable type is 'undefined'
+      }
+      @{
+        *
+        ${
+ @param variable
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => defined
+    type => member
+    id => js.util.defined
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Evaluate a variable.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var href = evar('document.location.href');
+        }
+      }
+      @{
+        *
+        ${
+ var href = evar('this.location.href', document); // with scope
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Convenience method which eats the traversal exceptions which occur while
+      }
+      @{
+        *
+        accessing the value.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        This line:
+      }
+      @{
+        *
+        ${
+   evar('document.documentElement.clientWidth');
+        }
+      }
+      @{
+        *
+        is eqivalent to:
+      }
+      @{
+        *
+        ${
+   document.documentElement ? this.doc.documentElement.clientWidth : undefined;
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => evar
+    type => member
+    id => js.util.evar
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Return an array of matching items.
+      }
+      @{
+        *
+        ${
+ var result = grep (value, list);
+        }
+      }
+      @{
+        *
+        ${
+ var result = grep (function, list);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Example using match function:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ function isPrime (num) { ... }
+        }
+      }
+      @{
+        *
+        ${
+ var primes =  grep (isPrime, [1, 2, 3, 4]);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Example using match value:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var value =  grep ('abc', ['abc', 'def', 'ghi']);
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => grep
+    type => member
+    id => js.util.grep
+    depth => 3
+  }
+  %{
+    props => %{
+      param => @{
+        id    <String> Identifier prefix (and key)
+        width <Number> Number width, zero padded (optional)
+      }
+    }
+    content => @{
+      @{
+        *
+        Produce an incremented identifier for a given prefix.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var id = ecma.util.incrementalId(prefix);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Where:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ id    <String> Identifier prefix (and key)
+        }
+      }
+      @{
+        *
+        ${
+ width <Number> Number width, zero padded (optional)
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Identifiers begin at 1.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Example:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var id1 = ecma.util.incrementalId('foo');
+        }
+      }
+      @{
+        *
+        ${
+ var id2 = ecma.util.incrementalId('foo');
+        }
+      }
+      @{
+        *
+        ${
+ var id3 = ecma.util.incrementalId('foo', 3);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ foo1
+        }
+      }
+      @{
+        *
+        ${
+ foo2
+        }
+      }
+      @{
+        *
+        ${
+ foo003
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => incrementalId
+    type => member
+    id => js.util.incrementalId
+    depth => 3
+  }
+  %{
+    props => %{
+      param => @{
+        unk     <Instance>      The unknown
+        klass   <Function>      The constructor class
+      }
+    }
+    content => @{
+      @{
+        *
+        Is the unkown an instance of (or derived from) this class
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ isa(unk, klass);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ unk     <Instance>      The unknown
+        }
+      }
+      @{
+        *
+        ${
+ klass   <Function>      The constructor class
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Objects with multiple inheritence created using the function
+      }
+      @{
+        *
+        L<ecma.lang.createMethods> will have a prototype member named
+      }
+      @{
+        *
+        C<__bases__>, which will be inspected if it exists.
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => isa
+    type => member
+    id => js.util.isa
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Recursively copy members of one object to another by key.
+      }
+      @{
+        *
+        ${
+ @param dest object
+        }
+      }
+      @{
+        *
+        ${
+ @param src object
+        }
+      }
+      @{
+        *
+        ${
+ @param ... more sources
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var dest = {a:1};
+        }
+      }
+      @{
+        *
+        ${
+ overlay(dest, {b:2}, {c:3});
+        }
+      }
+      @{
+        *
+        ${
+ // dest is now {a:1, b:2, c:3}
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => overlay
+    type => member
+    id => js.util.overlay
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Return a padded string of the specified width.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ ecma.util.pad
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        If the source length is greater than the specified width, it is returned
+      }
+      @{
+        *
+        without modification.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => pad
+    type => function
+    id => js.util.pad
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Produce a random identifier.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var id = randomId(); // id is ~ 8234
+        }
+      }
+      @{
+        *
+        ${
+ var id = randomId('tbl_'); // id is ~ tbl_8234
+        }
+      }
+      @{
+        *
+        ${
+ var id = randomId('tbl_', 100); // id is ~ tbl_82 (no greater than 99)
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ @param prefix
+        }
+      }
+      @{
+        *
+        ${
+ @param multiplier (default 100,000)
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => randomId
+    type => member
+    id => js.util.randomId
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Step carefully over each item in an array, applying the callback.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ ecma.util.step(arr, func);
+        }
+      }
+      @{
+        *
+        ${
+ ecma.util.step(arr, func, scope);
+        }
+      }
+      @{
+        *
+        ${
+ ecma.util.step(arr, func, scope, args);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        The first parameter passed to C<func> is always the array item of the
+      }
+      @{
+        *
+        current step.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Exceptions which are thrown by C<func> are caught and stored in an array.
+      }
+      @{
+        *
+        After all items have been stepped through, a L<ecma.error.Multiple>
+      }
+      @{
+        *
+        exception is thrown if necessary.  This `save-stepping' is the purpose
+      }
+      @{
+        *
+        of this function.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => step
+    type => function
+    id => js.util.step
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Export variables into the given namespace.
+      }
+      @{
+        *
+        ${
+ ecma.util.use(object, object);
+        }
+      }
+      @{
+        *
+        For example:
+      }
+      @{
+        *
+        ${
+ ecma.util.use(this, ecma.dom.constants);
+        }
+      }
+      @{
+        *
+        Would make the L<ecma.dom.constants> available as C<this.____>.
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => use
+    type => member
+    id => js.util.use
+    depth => 3
+  }
+}

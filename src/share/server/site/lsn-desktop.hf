@@ -1,0 +1,14 @@
+# HashFile 2.1
+modules => %{
+  desktop => %{
+    modules => @{
+      site:dde
+      domain:users
+    }
+    version => 1.0
+    ext_path => @{
+      /web/admin
+      /desktop/ext
+    }
+  }
+}

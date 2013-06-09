@@ -1,0 +1,16 @@
+[#:into /res/layouts/xhtml+lsn]
+[#:css src=`./styles.css`]
+[#:use "[#:cgi 'doc']"]
+
+<div id="doc">
+  [#:for (idx,def) in defs]
+  <div class="blk [#def/type] d[#def/depth]" id="[#def/id]">
+    <h[#def/depth]>
+      [#./module.pm/as_html_id definition => def]
+    </h[#def/depth]>
+    <div class="desc">
+      [#./module.pm/as_html def=def]
+    </div>
+  </div>
+  [#:end for]
+</div>

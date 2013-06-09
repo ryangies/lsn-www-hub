@@ -1,0 +1,6 @@
+# HashFile 2.1
+next-avail-port => 4000
+services => @{
+}
+hosts => @{
+}

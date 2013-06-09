@@ -1,0 +1,168 @@
+#!/sbin/runscript
+
+#
+#
+# This script has been depricated (it is very old)
+# Use domains-centos instead.
+#
+#
+
+opts="configtest reload"
+
+depend() {
+	need net
+	use mysql dns logger netmount postgresql
+	after sshd ligttpd
+}
+
+configtest() {
+	declare -r DOMAIN="${SVCNAME}"
+    if [ ${DOMAIN} == 'domains' ]; then
+        einfo "Checking all apache configs" 
+        cd [#dir-vhost-root]
+        for domain in * ; do
+            if [ $domain != 'localhost' ]; then
+                init_script=/etc/init.d/$domain
+                if [ ! -L $init_script ]; then
+                    ln -s /etc/init.d/domains $init_script
+                fi
+                $init_script configtest
+            fi
+        done
+    else
+        checkconfig ${DOMAIN}
+        eend $?
+    fi	
+}
+
+checkconfd() {
+    # Security fix
+    USER=$1
+    HOME=[#dir-vhost-root]/$1
+    PATH=/usr/local/bin:/usr/bin:/bin:/opt/bin:/opt/blackdown-jdk-1.4.2.03/bin:/opt/blackdown-jdk-1.4.2.03/jre/bin
+
+	SERVERROOT="${SERVERROOT:-/usr/lib/apache2}"
+	if [ ! -d ${SERVERROOT} ]; then
+		eerror "SERVERROOT does not exist: ${SERVERROOT}"
+		return 1
+	fi
+
+  if [ -d [#dir-vhost-root]/$1/config ]; then
+    # New file structure
+    CONFIGFILE="${CONFIGFILE:-[#dir-vhost-root]/$1/config/apache.conf}"
+    OPTS=`cat [#dir-vhost-root]/$1/config/apache.opts`
+  else
+    # Old file structure
+    CONFIGFILE="${CONFIGFILE:-[#dir-vhost-root]/$1/apache.conf}"
+    OPTS=`cat [#dir-vhost-root]/$1/apache.d/opts`
+  fi
+	[ "${CONFIGFILE#/}" = "${CONFIGFILE}" ] && CONFIGFILE="${SERVERROOT}/${CONFIGFILE}"
+	if [ ! -r "${CONFIGFILE}" ]; then
+		eerror "Unable to read configuration file: ${CONFIGFILE}"
+		return 1
+	fi
+	APACHE2_OPTS="${OPTS} -d ${SERVERROOT}"
+	APACHE2_OPTS="${APACHE2_OPTS} -f ${CONFIGFILE}"
+	[ -n "${STARTUPERRORLOG}" ] && APACHE2_OPTS="${APACHE2_OPTS} -E ${STARTUPERRORLOG}"
+
+	APACHE2="/usr/sbin/apache2"
+}
+
+checkconfig() {
+    checkconfd $1 || return 1
+
+	${APACHE2} ${APACHE2_OPTS} -t 1>/dev/null 2>&1
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		eerror "Apache2 has detected a syntax error in your configuration files for $1:"
+		${APACHE2} ${APACHE2_OPTS} -t
+	fi
+
+	return $ret
+}
+
+start() {
+	declare -r DOMAIN="${SVCNAME}"
+    if [ ${DOMAIN} == 'domains' ]; then
+        einfo "Starting all apache services." 
+        cd [#dir-vhost-root]
+        for domain in * ; do
+            if [ $domain != 'localhost' ]; then
+                /etc/init.d/$domain start
+            fi
+        done
+    else
+    checkconfig ${DOMAIN} || return 1
+    ebegin "Starting ${DOMAIN} with ${APACHE2_OPTS}"
+    [ -f /var/log/apache2/$1/ssl_scache ] && rm /var/log/apache2/$1/ssl_scache
+
+    ${APACHE2} ${APACHE2_OPTS} -k start
+        eend $?
+    fi
+}
+
+stop() {
+	declare -r DOMAIN="${SVCNAME}"
+    if [ ${DOMAIN} == 'domains' ]; then
+        einfo "Stoping all apache services." 
+        cd [#dir-vhost-root]
+        for domain in * ; do
+            if [ $domain != 'localhost' ]; then
+                init_script=/etc/init.d/$domain
+                if [ ! -L $init_script ]; then
+                    ln -s /etc/init.d/domains $init_script
+                fi
+                $init_script stop
+            fi
+        done
+    else
+        checkconfd ${DOMAIN} || return 1
+        ebegin "Stopping ${DOMAIN} with ${APACHE2_OPTS}"
+        ${APACHE2} ${APACHE2_OPTS} -k stop
+        eend $?
+    fi
+}
+
+reload() {
+	declare -r DOMAIN="${SVCNAME}"
+    if [ ${DOMAIN} == 'domains' ]; then
+        einfo "Gracefully restarting all apache services." 
+        cd [#dir-vhost-root]
+        for domain in * ; do
+            if [ $domain != 'localhost' ]; then
+                init_script=/etc/init.d/$domain
+                if [ ! -L $init_script ]; then
+                    ln -s /etc/init.d/domains $init_script
+                fi
+                $init_script reload
+            fi
+        done
+    else
+        checkconfig ${DOMAIN} || return 1
+        ebegin "Gracefully restarting ${DOMAIN}"
+        ${APACHE2} ${APACHE2_OPTS} -k graceful
+        eend $?
+    fi
+}
+
+svc_restart() {
+	declare -r DOMAIN="${SVCNAME}"
+    if [ ${DOMAIN} == 'domains' ]; then
+        einfo "Restarting all apache services." 
+        cd [#dir-vhost-root]
+        for domain in * ; do
+            if [ $domain != 'localhost' ]; then
+                init_script=/etc/init.d/$domain
+                if [ ! -L $init_script ]; then
+                    ln -s /etc/init.d/domains $init_script
+                fi
+                $init_script restart
+            fi
+        done
+    else
+        checkconfig ${DOMAIN} || return 1
+        ebegin "Restarting ${DOMAIN}"
+        ${APACHE2} ${APACHE2_OPTS} -k restart
+        eend $?
+    fi
+}

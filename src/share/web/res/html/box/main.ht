@@ -1,0 +1,20 @@
+<div class="box">   <div class="box1a"> <div class="box1c"> <div class="box3a">
+<div class="box3c"> <div class="boxXr"> <div class="box1b"> <div class="box3b">
+<div class="boxYr"> <div class="box2a"> <div class="box2c"> <div class="box2b">
+[#CONTENT || '']
+</div></div></div></div></div></div></div></div></div></div></div></div>
+[#:css]
+.box {display:inline-block;[#_width && 'width:[#_width]'];}
+.box .box1a { background:url([#`./1a.png`]) no-repeat   top    left    ;}
+.box .box1b { background:url([#`./1b.png`]) repeat-x    top            ;}
+.box .box1c { background:url([#`./1c.png`]) no-repeat   top    right   ;}
+.box .box2a { background:url([#`./2a.png`]) repeat-y           left    ;}
+.box .box2b { background:url([#`./2b.png`]) repeat                     ;}
+.box .box2c { background:url([#`./2c.png`]) repeat-y           right   ;}
+.box .box3a { background:url([#`./3a.png`]) no-repeat   bottom left    ;}
+.box .box3b { background:url([#`./3b.png`]) repeat-x    bottom         ;}
+.box .box3c { background:url([#`./3c.png`]) no-repeat   bottom right   ;}
+.box .boxXr { padding:0 2px;}
+.box .boxYr { padding:2px 0;margin:0 -2px;}
+.box .box2b { margin:0 2px;}
+[#:end css]

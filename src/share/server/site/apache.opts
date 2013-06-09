@@ -1,0 +1,4 @@
+[#:join ' ']
+  [#opt-dav && '-D AUTH_DIGEST -D DAV']
+  [#opt-php && '-D PHP -D PHP5']
+[#:end join]

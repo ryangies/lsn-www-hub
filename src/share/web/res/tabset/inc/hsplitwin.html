@@ -1,0 +1,12 @@
+[#:js src=`./hsplitwin.js`]
+<div id="hsplitwin" class="h1 w1">
+  <div id="hsplittop" class="w1 h1a">[#_top || '']</div>
+  <div id="hsplitsep" class="w1 h1b"></div>
+  <div id="hsplitbot" class="w1 h1c">[#_bottom || '']</div>
+</div>
+[#:css]
+#hsplitwin {position:absolute;top:0;left:0;}
+#hsplittop {overflow:auto;}
+#hsplitsep {background:url([#`../images/vsep.png`]);font-size:0pt;cursor:n-resize;}
+#hsplitbot {overflow:auto;}
+[#:end css]

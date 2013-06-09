@@ -1,0 +1,28 @@
+[#:into ./base.html]
+
+<h3>Type:</h3>
+<div class="indt">
+
+  [#:for (idx, type) 'scalar' 'hash' 'array']
+  <label for="[#type][#UID]">
+    <input
+      id="[#type][#UID]"
+      type="radio"
+      name="values/type"
+      value="[#type]"
+      [#:if idx eq 0]checked="checked"[#:end if]
+    />
+    [#:html:image '/res/icons/16x16/nodes/data-[#type].gif']
+    [#type]
+  </label>
+  [#:end for]
+
+</div>
+
+<h3>Name:</h3>
+<div class="indt">
+  <input id="n[#UID]" type="text" name="values/name"/>
+</div>
+
+__DATA__
+title => New item

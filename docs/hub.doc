@@ -1,0 +1,1344 @@
+# HashFile 2.1
+defs => @{
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => TreeBox
+    type => class
+    id => js.TreeBox
+    depth => 2
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Because nodes are often wrapped within nodes, this method exposes this
+      }
+      @{
+        *
+        underlying data node. Provided such that the wrapper class:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ Wrapper.prototype.getDataNode = function () {
+        }
+      }
+      @{
+        *
+        ${
+   return this.dnode.getDataNode();
+        }
+      }
+      @{
+        *
+        ${
+ \}
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        And methods which operatate on data nodes can then be passed a real dnode
+      }
+      @{
+        *
+        or a Wrapper instance.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => getDataNode
+    type => function
+    id => js.getDataNode
+    depth => 2
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => hubb
+    type => namespace
+    id => js.hubb
+    depth => 2
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Client-server data bridge via hub addressing.
+      }
+      @{
+        *
+        ${
+ var db = new ecma.hubb.DataBridge();
+        }
+      }
+      @{
+        ${
+ addr = db.fetch(addr);
+        }
+        ${
+
+        }
+      }
+    }
+    name => DataBridge
+    type => class
+    id => js.hubb.DataBridge
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        ${
+ create(params, cb);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ params:
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+   target
+        }
+      }
+      @{
+        *
+        ${
+   name
+        }
+      }
+      @{
+        *
+        ${
+   type
+        }
+      }
+      @{
+        *
+        ${
+   value
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => create
+    type => function
+    id => js.hubb.DataBridge.create
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Fetches nodes from the server.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ addr = db.fetch(addr);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Returns the address which is being fetched.  Because it is normalized, you
+      }
+      @{
+        *
+        may want this value to match against the address in the callback.  See
+      }
+      @{
+        *
+        L<ecma.data.addr_normalize>.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => fetch
+    type => function
+    id => js.hubb.DataBridge.fetch
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => get
+    type => function
+    id => js.hubb.DataBridge.get
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Like L<get> however issues a L<fetch> on existing nodes after the 
+      }
+      @{
+        *
+        callback. Mostly this is a no-op as the response will be not-modified. 
+      }
+      @{
+        *
+        When it is modified, the node knows how to merge itself.
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => getAndFetch
+    type => function
+    id => js.hubb.DataBridge.getAndFetch
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Retrieves a node from the local repository by its address.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => getNodeByAddress
+    type => function
+    id => js.hubb.DataBridge.getNodeByAddress
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Throw an exception unless the address is valid.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ db.validateAddress(addr);
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Because addresses are susceptible to translation, they should be as well-
+      }
+      @{
+        *
+        formed as possible.  It would be unfortunate if you called delete on:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ /files/tmp/
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        and it only deleted:
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ /files/tmp/index.html
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => validateAddress
+    type => function
+    id => js.hubb.DataBridge.validateAddress
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Get an icon path given a data type
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => getIconByType
+    type => function
+    id => js.hubb.getIconByType
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Return the global data-bridge instance.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var db = ecma.hubb.getInstance();
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => getInstance
+    type => function
+    id => js.hubb.getInstance
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Return the global data-bridge instance.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var db = ecma.hubb.getInstance2();
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => getInstance2
+    type => function
+    id => js.hubb.getInstance2
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => hubb.ui
+    type => namespace
+    id => js.hubb.ui
+    depth => 3
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => BrowseDialog
+    type => class
+    id => js.hubb.ui.BrowseDialog
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => ComboBox
+    type => class
+    id => js.hubb.ui.ComboBox
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => CopyDialog
+    type => class
+    id => js.hubb.ui.CopyDialog
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => CreateDialog
+    type => class
+    id => js.hubb.ui.CreateDialog
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => DataList
+    type => class
+    id => js.hubb.ui.DataList
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => DownloadDialog
+    type => class
+    id => js.hubb.ui.DownloadDialog
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => FileItem
+    type => class
+    id => js.hubb.ui.FileItem
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => FileList
+    type => class
+    id => js.hubb.ui.FileList
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => FolderList
+    type => class
+    id => js.hubb.ui.FolderList
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => MoveDialog
+    type => class
+    id => js.hubb.ui.MoveDialog
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => NewDirectoryDialog
+    type => class
+    id => js.hubb.ui.NewDirectoryDialog
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => NewFileDialog
+    type => class
+    id => js.hubb.ui.NewFileDialog
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => TargetDialog
+    type => class
+    id => js.hubb.ui.TargetDialog
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        A single item in the list.
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => TreeNode
+    type => class
+    id => js.hubb.ui.TreeNode
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        A widget which reflects and browses server directories files and data.
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => TreeView
+    type => class
+    id => js.hubb.ui.TreeView
+    depth => 4
+  }
+  %{
+    props => %{
+      param => @{
+        dnode <ecma.hubb.Node> Data-node which is in question
+      }
+    }
+    content => @{
+      @{
+        *
+        Indicates whether a particular data-node should be displayed.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ dnode <ecma.hubb.Node> Data-node which is in question
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Return either C<true> or C<false>.  By default true is always returned.
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => canDisplay
+    type => function
+    id => js.hubb.ui.TreeView.canDisplay
+    depth => 5
+  }
+  %{
+    props => %{
+      param => @{
+        tnode <ecma.hubb.ui.TreeNode> The node in question
+      }
+    }
+    content => @{
+      @{
+        *
+        Informs the node that it should enbable expand/collapse functions.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ tnode <ecma.hubb.ui.TreeNode> The node in question
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        Return either C<true> or C<false>. By default we use the data-node's logic.
+      }
+      @{
+        *
+        You would want to override this if, for instance, you're creating a file-
+      }
+      @{
+        *
+        chooser and you don't want multipart or data file to expand.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => canExpand
+    type => function
+    id => js.hubb.ui.TreeView.canExpand
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Deselect all nodes.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ tview.deselect();       // deselect all
+        }
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => deselect
+    type => function
+    id => js.hubb.ui.TreeView.deselect
+    depth => 5
+  }
+  %{
+    props => %{
+      param => @{
+        tnode <ecma.hubb.ui.TreeNode> Node to deselect
+      }
+    }
+    content => @{
+      @{
+        *
+        Deselect the specified node.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ tview.deselectNode(tnode);  // deselect just that node
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ tnode <ecma.hubb.ui.TreeNode> Node to deselect
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => deselectNode
+    type => function
+    id => js.hubb.ui.TreeView.deselectNode
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Return the first-selected node
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var tnode = tview.getAnchorNode()
+        }
+      }
+      @{
+        ${
+
+        }
+      }
+    }
+    name => getAnchorNode
+    type => function
+    id => js.hubb.ui.TreeView.getAnchorNode
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Return the node with the focus.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var tnode = tview.getFocusNode()
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        TODO: The focus is different than the selection, which will allow
+      }
+      @{
+        *
+        keyboard navigation (up/down) for movement and a key (space/enter) for
+      }
+      @{
+        *
+        selection.  The focus node is then the one which has focus but is not
+      }
+      @{
+        *
+        necessarily selected.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => getFocusNode
+    type => function
+    id => js.hubb.ui.TreeView.getFocusNode
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Return the last-selected node.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var tnode = tview.getSelectedNode()
+        }
+      }
+      @{
+        ${
+ tnode <ecma.hubb.ui.TreeNode> Node which is being double-clicked
+        }
+        ${
+
+        }
+      }
+    }
+    name => getSelectedNode
+    type => function
+    id => js.hubb.ui.TreeView.getSelectedNode
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+      @{
+        *
+        Return the selection array.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ var array = tview.getSelection();
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        By default we do only select one node at time.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => getSelection
+    type => function
+    id => js.hubb.ui.TreeView.getSelection
+    depth => 5
+  }
+  %{
+    props => %{
+      param => @{
+        event <Event>
+        tnode <ecma.hubb.ui.TreeNode> Node which is being clicked
+      }
+    }
+    content => @{
+      @{
+        *
+        Respond to a click.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ event <Event>
+        }
+      }
+      @{
+        *
+        ${
+ tnode <ecma.hubb.ui.TreeNode> Node which is being clicked
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        By default we clear the current selection and select the node.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => onClick
+    type => function
+    id => js.hubb.ui.TreeView.onClick
+    depth => 5
+  }
+  %{
+    props => %{
+      param => @{
+        event <Event>
+        tnode <ecma.hubb.ui.TreeNode> Node which is being double-clicked
+      }
+    }
+    content => @{
+      @{
+        *
+        Respond to a double-click event.
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ event <Event>
+        }
+      }
+      @{
+        *
+        ${
+ tnode <ecma.hubb.ui.TreeNode> Node which is being double-clicked
+        }
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        By default we toggle the item.
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => onDblClick
+    type => function
+    id => js.hubb.ui.TreeView.onDblClick
+    depth => 5
+  }
+  %{
+    props => %{
+      param => @{
+        tnode <ecma.hubb.ui.TreeNode> Node to select
+        event <Event> Defines this as a user-invoked action
+      }
+    }
+    content => @{
+      @{
+        *
+        Select the provided node
+      }
+      @{
+        *
+        ${
+
+        }
+      }
+      @{
+        *
+        ${
+ tnode <ecma.hubb.ui.TreeNode> Node to select
+        }
+      }
+      @{
+        *
+        ${
+ event <Event> Defines this as a user-invoked action
+        }
+      }
+      @{
+        ${
+
+        }
+        ${
+
+        }
+      }
+    }
+    name => selectNode
+    type => function
+    id => js.hubb.ui.TreeView.selectNode
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => UploadDialog
+    type => class
+    id => js.hubb.ui.UploadDialog
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => hubb.ui.input
+    type => namespace
+    id => js.hubb.ui.input
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Control
+    type => class
+    id => js.hubb.ui.input.Control
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => InputBoolean
+    type => class
+    id => js.hubb.ui.input.InputBoolean
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => InputText
+    type => class
+    id => js.hubb.ui.input.InputText
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => InputTextarea
+    type => class
+    id => js.hubb.ui.input.InputTextarea
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => ResizeTextarea
+    type => class
+    id => js.hubb.ui.input.ResizeTextarea
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => StatusIcon
+    type => class
+    id => js.hubb.ui.input.StatusIcon
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => lsn.hubb.command
+    type => namespace
+    id => js.lsn.hubb.command
+    depth => 4
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Base
+    type => class
+    id => js.lsn.hubb.command.Base
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Batch
+    type => class
+    id => js.lsn.hubb.command.Batch
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Copy
+    type => class
+    id => js.lsn.hubb.command.Copy
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Create
+    type => class
+    id => js.lsn.hubb.command.Create
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Download
+    type => class
+    id => js.lsn.hubb.command.Download
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Fetch
+    type => class
+    id => js.lsn.hubb.command.Fetch
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Insert
+    type => class
+    id => js.lsn.hubb.command.Insert
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Move
+    type => class
+    id => js.lsn.hubb.command.Move
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Remove
+    type => class
+    id => js.lsn.hubb.command.Remove
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Reorder
+    type => class
+    id => js.lsn.hubb.command.Reorder
+    depth => 5
+  }
+  %{
+    props => %{
+    }
+    content => @{
+    }
+    name => Store
+    type => class
+    id => js.lsn.hubb.command.Store
+    depth => 5
+  }
+}

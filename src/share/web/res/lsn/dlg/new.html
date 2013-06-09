@@ -1,0 +1,8 @@
+[#./create.html]
+
+[#:js event='dialog, ok']
+  var addr = dlg[#UID].params.node.addr;
+  var name = js.dom.getValue('name[#UID]');
+  var type = '[#type]';
+  dlg[#UID].params.hub.create(addr, name, type);
+[#:end js]

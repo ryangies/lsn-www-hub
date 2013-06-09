@@ -1,0 +1,54 @@
+[#:css]
+.[#UID2] {
+  position:relative;
+  border-collapse:collapse;
+}
+.[#UID2] .corner {
+  font-size:1px;
+  line-height:1px;
+}
+.[#UID2] .horiz {
+  background-repeat:repeat-x;
+  height:15px;
+  overflow:hidden;
+}
+.[#UID2] .vert {
+  background-repeat:repeat-y;
+  width:15px;
+  overflow:hidden;
+}
+.[#UID2] .middle {
+  background-color:white;
+}
+.[#UID2] .content {
+  position:relative;
+  top:-10px;
+  left:-10px;
+  margin-right:-14px;
+  margin-bottom:-14px;
+}
+.[#UID2] td,
+.[#UID2] img {
+  vertical-align:top;
+  border:none;
+  margin:0;
+  padding:0;
+}
+[#:end css]
+<table class="[#UID2]"><tbody>
+<tr>
+  <td class="corner"><img width="15" height="15" src="[#`./nw.png`]"/></td>
+  <td class="horiz" style="background-image:url([#`./n.png`])"></td>
+  <td class="corner"><img width="15" height="15" src="[#`./ne.png`]"/></td>
+</tr>
+<tr>
+  <td class="vert" style="background-image:url([#`./w.png`])"></td>
+  <td class="middle"><div class="content">[#CONTENT || '']</div></td>
+  <td class="vert" style="background-image:url([#`./e.png`])"></td>
+</tr>
+<tr>
+  <td class="corner"><img width="15" height="15" src="[#`./sw.png`]"/></td>
+  <td class="horiz" style="background-image:url([#`./s.png`])"></td>
+  <td class="corner"><img width="15" height="15" src="[#`./se.png`]"/></td>
+</tr>
+</tbody></table>

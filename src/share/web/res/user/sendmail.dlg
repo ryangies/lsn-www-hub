@@ -1,0 +1,90 @@
+[#:into /res/hub/dlg/frame.ht _title='Email']
+
+<div id="[#UID2]area">
+  <form id="[#UID2]form">
+    [#:for (field) in fields]
+    <div>
+      [#:if field eq 'separator']
+      <hr/>
+      [#:else]
+      <label for="[#field/id]">[#field/label]:</label>
+      <input type="text" id="[#field/id]" name="[#field/id]" value="[#field/default]"/>
+      [#:end if]
+    </div>
+    [#:end for]
+    <div>
+      <textarea name="mail-text"></textarea><br/>
+    </div>
+  </form>
+</div>
+
+[#:css]
+#[#UID2]area {}
+#[#UID2]area * {font-family:sans-serif;font-size:10pt;}
+#[#UID2]area form div {margin:1px 0;}
+#[#UID2]area form label {display:block;width:100px;float:left;}
+#[#UID2]area form input {width:500px;}
+#[#UID2]area form textarea {width:600px;height:20em;}
+#[#UID2]area form textarea {font-family:monospace;font-size:8pt;}
+#[#UID2]area form hr {visibility:hidden;}
+[#:end css]
+
+[#:js event='widget, ready']
+[#:end js]
+
+[#:js event='widget, ok']
+this.stopEvent();
+var mask = new js.lsn.Mask();
+//mask.getElement().appendChild(js.dom.createElement('h1=Sending...'));
+var req = new js.lsn.Request('[#`./module.pm`]/sendmail');
+req.addEventListener('onFailure', function (req) {
+  var msg = 'An error occurred: ' + req.xhr.responseText;
+  alert(msg);
+});
+req.addEventListener('onSuccess', function (req) {
+  alert('Mail sent!');
+  this.hide();
+  this.doEvent('mail-sent');
+}, this);
+req.addEventListener('onComplete', function (req) {
+  mask.hide();
+});
+var values = js.dom.getValues('[#UID2]form');
+mask.show({
+  'opacity':.8,
+  'background-color':'white',
+  'cursor':'wait',
+  'z-index':this.zIndex + 1
+});
+
+req.submit(values);
+[#:end js]
+
+__DATA__
+
+_title => Send Mail
+
+fields => @{
+  %{
+    id => mail-to
+    label => To
+    default => 
+  }
+  %{
+    id => mail-cc
+    label => CC
+    default => 
+  }
+  %{
+    id => mail-bcc
+    label => BCC
+    default => 
+  }
+  separator
+  %{
+    id => mail-subject
+    label => Subject
+    default => 
+  }
+  separator
+}

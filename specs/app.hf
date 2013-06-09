@@ -1,0 +1,10 @@
+# HashFile 2.1
+builder => ecma
+copyright => Livesite (c) Livesite Networks, LLC 2006-2013.
+working_dir => ${LSN_SRC_ROOT}/lsn-javascript/src/lib/ecma
+target => ../src/share/web/res/js/app.js
+name => Livesite Client-side Applications
+version => .002
+files => @{
+  lsn/app/Application.js
+}
