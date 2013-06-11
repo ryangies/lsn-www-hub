@@ -3,22 +3,13 @@ name => lsn-www-hub
 builder => perl
 src_dir => src/lib
 src_files => ALL
+abstract => Livesite Networks WWW Bundle
+license => mit
 version => @{
   5
   0
-  269
+  270
 }
-include => @{
-  %{
-    dest => share
-    dirs => @{
-      src/share/server
-      src/share/web
-    }
-  }
-}
-abstract => Livesite Networks WWW Bundle
-license => lgpl
 scripts => @{
   src/bin/lsn-server-config
   src/bin/lsn-tc-web
@@ -30,30 +21,94 @@ scripts => @{
   src/bin/lsn-web-build
   src/bin/lsn-vhost-add
 }
+include => @{
+  %{
+    dest => share
+    dirs => @{
+      src/share/server
+      src/share/web
+    }
+  }
+}
 pre_compile => @{
 }
 depends => %{
+  APR::Const
+  APR::Finfo
+  APR::OS
+  APR::URI
+  Algorithm::KeyGen
+  Apache2::Access
+  Apache2::Connection
+  Apache2::Const
+  Apache2::Cookie
+  Apache2::Directive
+  Apache2::Filter
+  Apache2::Log
+  Apache2::MPM
+  Apache2::Module
+  Apache2::Request
+  Apache2::RequestIO
+  Apache2::RequestRec
+  Apache2::RequestUtil
+  Apache2::Response
+  Apache2::ServerRec
+  Apache2::ServerUtil
+  Apache2::SubRequest
+  Apache2::URI
+  Apache2::Upload
+  CGI::Cookie
+  CSS::Minifier::XS
+  Data::Format::JavaScript
+  Data::Format::Nml::Document
+  Data::Format::XFR
+  Data::Format::Xml
+  Data::Hub
+  Data::Hub::Container
+  Data::Hub::FileSystem::Node
+  Data::Hub::Util
+  Data::OrderedHash
+  Data::UUID
+  Digest::SHA1
+  Encode
+  Error
+  Error::Logical
+  Error::Programatic
+  Error::Simple
+  Fcntl
+  GD
+  HTTP::Date
+  Image::Size
+  JSON::XS
+  JavaScript::Minifier::XS
+  LWP::UserAgent
+  List::Util
+  Misc::Stopwatch
+  ModPerl::Util
+  Parse::StringTokenizer
+  Parse::Template::Standard
+  Parse::Template::Web
+  Perl::Class
+  Perl::Module
+  Perl::Options
+  Perl::Util
+  Scalar::Util
+  Tie::Hash
 }
 about => %{
   copyright.txt => ${
     Copyright (C) 2006-2013 by Livesite Networks, LLC. All rights reserved.
-
     Copyright (C) 2000-2005 by Ryan Gies. All rights reserved.
-
     Redistribution and use in source and binary forms, with or without 
     modification, are permitted provided that the following conditions are met:
-
     * Redistributions of source code must retain the above copyright notice, 
     this list of conditions and the following disclaimer.
-
     * The origin of this software must not be misrepresented; you must not 
     claim that you wrote the original software. If you use this software in a 
     product, an acknowledgment in the product documentation would be 
     appreciated but is not required.
-
     * Altered source versions must be plainly marked as such, and must not be 
     misrepresented as being the original software.
-
     * The name of the author may not be used to endorse or promote products 
     derived from this software without specific prior written permission.
   }
@@ -71,7 +126,6 @@ about => %{
     CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
     IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
     OF SUCH DAMAGE.
-
     To the best of our knowledge, no patented algorithms have been used. However, we
     do not have the resources to carry out a patent search, and therefore cannot 
     give any guarantee of the above statement.
