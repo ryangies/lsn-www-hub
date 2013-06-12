@@ -51,7 +51,7 @@ sub image_convert {
   my $path = shift or throw Error::Programatic "Provide a path";
   my ($opts) = my_opts(\@_);
   my ($orig_w, $orig_h) = image_size($path);
-  my ($display_w, $display_h) = image_dims($path, -opts => $opts);
+  my ($display_w, $display_h, $zoom_info) = image_dims($path, -opts => $opts);
   $$opts{'limits'} = [64, 200, 400, 800, 1680, 2048];
   my ($w, $h) = $$opts{'maxdpi'}
     ? ($orig_w, $orig_h)
@@ -118,6 +118,7 @@ sub image_convert {
     'height'  => $h,
     'display_width'   => $display_w,
     'display_height'  => $display_h,
+    'zoom_info' => $zoom_info,
   };
 
 }

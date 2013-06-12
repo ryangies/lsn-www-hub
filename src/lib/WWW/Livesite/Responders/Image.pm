@@ -39,7 +39,7 @@ sub match_request {
 sub compile {
   my $self = shift;
   my $resp = $Hub->get('/sys/response');
-  my $addr = $resp->{addr};
+  my $addr = $resp->{'addr'};
   my $image = $Hub->get($addr) or throw Error::DoesNotExist;
   $image->get_mtime;  # add entry to fs_access_log
                       # note, image_convert takes care of mtime check
@@ -71,10 +71,14 @@ sub compile {
 
     my $props = image_convert($src_path, -opts => $opts);
     $new_path = $props->{'path'};
-    $resp->{'headers'}{'X-Image-Width'} = $$props{width};
-    $resp->{'headers'}{'X-Image-Height'} = $$props{height};
-    $resp->{'headers'}{'X-Image-DisplayWidth'} = $$props{display_width};
-    $resp->{'headers'}{'X-Image-DisplayHeight'} = $$props{display_height};
+    $resp->{'headers'}{'X-Image-Width'} = $$props{'width'};
+    $resp->{'headers'}{'X-Image-Height'} = $$props{'height'};
+    $resp->{'headers'}{'X-Image-DisplayWidth'} = $$props{'display_width'};
+    $resp->{'headers'}{'X-Image-DisplayHeight'} = $$props{'display_height'};
+    if ($$props{'zoom_info'}) {
+      $resp->{'headers'}{'X-Image-OffsetLeft'} = $$props{'zoom_info'}{'x'};
+      $resp->{'headers'}{'X-Image-OffsetTop'} = $$props{'zoom_info'}{'y'};
+    }
   }
 
   return if ($$Hub{'/sys/request/method'} eq 'HEAD');
