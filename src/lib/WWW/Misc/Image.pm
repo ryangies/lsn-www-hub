@@ -10,7 +10,25 @@ use Data::Hub qw($Hub);
 use Data::Hub::Util qw(:all);
 use Perl::Options qw(my_opts);
 use Image::Size qw();
-use GD;
+use Try::Tiny;
+
+# ------------------------------------------------------------------------------
+# Detecting image dimensions
+#
+# This is very very slow...
+#
+#   my $image = GD::Image->new($path) or warn "Cannot create GD::Image ($@): $path";
+#   return () unless $image;
+#   $image->getBounds();
+# ------------------------------------------------------------------------------
+
+our $HAS_GD = 0;
+try {
+  require GD;
+  $HAS_GD = 1;
+} catch {
+  $$Hub{'/sys/log'}->warn('GD not found, image manipulation disabled');
+};
 
 our @EXPORT_OK = qw(
   props_to_resize_str
@@ -25,11 +43,6 @@ sub imgsize { goto image_size; }
 sub image_size {
   my $path = shift or return ();
   return Image::Size::imgsize($path);
-
-# Very very slow...
-# my $image = GD::Image->new($path) or warn "Cannot create GD::Image ($@): $path";
-# return () unless $image;
-# $image->getBounds();
 
 }
 
@@ -67,7 +80,7 @@ sub image_convert {
     my $out_dir = $opts->{'out_dir'} || path_parent($path);
     my $out_fn = _mkoutfn($opts, $path, $w, $h);
     my $new_path = path_normalize("$out_dir/$out_fn");
-    if (! -e $new_path || stat($path)->mtime > stat($new_path)->mtime) {
+    if ($HAS_GD && (! -e $new_path || stat($path)->mtime > stat($new_path)->mtime)) {
       GD::Image->trueColor(1);
       my $ext = path_ext($new_path);
       my $src = GD::Image->new($path) or die $@;
