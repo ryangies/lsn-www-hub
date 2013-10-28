@@ -22,12 +22,16 @@ use Try::Tiny;
 #   $image->getBounds();
 # ------------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------------
+# Detect GD support
+# ------------------------------------------------------------------------------
+
 our $HAS_GD = 0;
 try {
   require GD;
   $HAS_GD = 1;
 } catch {
-  $$Hub{'/sys/log'}->warn('GD not found, image manipulation disabled');
+  # GD not found, image manipulation disabled
 };
 
 our @EXPORT_OK = qw(

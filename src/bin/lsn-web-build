@@ -515,7 +515,7 @@ our @Builders = ();
 foreach my $project_filename (@$Build_Files) {
 
   my $project_file = $$Hub{$project_filename}
-      or die "Project file found: $project_filename";
+      or die "Project file not found: $project_filename";
 
   my $builder = Local::Builder->new(
     console => $Console,
