@@ -3,6 +3,7 @@ package App::LSN::Setup;
 use strict;
 our $VERSION = 1.0;
 
+use Perl::Module;
 use Error::Programatic;
 use Perl::Options qw(my_opts);
 use Perl::Util qw(unshift_uniq);
@@ -315,7 +316,7 @@ sub get_server_config {
 sub chown {
   my $self = shift;
   my $sconf = $self->get_server_config();
-  my $svcs = $Hub->get($$self{svcs_fn}) or die 'Missing services config';
+  my $svcs = $Hub->get($$self{svcs_fn}) or return;
   my $user = $svcs->get('global/user') or die 'Unknown user';
   my $group = $svcs->get('global/group') or die 'Unknown group';
   my $gsvn = $svcs->get('global/group-svn') or die 'Unknown group-svn';
@@ -343,7 +344,9 @@ sub chown {
 sub _prompt_for_password {
   my $pw1 = _prompt('Password', -noecho => 1);
   my $pw2 = _prompt('   again', -noecho => 1);
-  return Digest::SHA1::sha1_hex($pw1) if $pw1 eq $pw2;
+  $pw1 = '' unless defined $pw1;
+  $pw2 = '' unless defined $pw2;
+  return Digest::SHA1::sha1_hex($pw1) if defined $pw1 && $pw1 eq $pw2;
   print STDERR "Passwords do not match\n";
   _prompt_for_password()
 }
