@@ -207,6 +207,8 @@ $USAGE{'initd'} = {
   summary => 'Create or remove init script for domain',
   params => Data::OrderedHash->new(
     '<domain>' => 'Domain name (or comma-separated list of names, or "all")',
+    '-start' => 'Start each init script after creating it',
+    '-remove' => 'Stop and remove the init script',
   ),
 };
 
@@ -218,8 +220,7 @@ sub initd {
   my $delete = [];
   foreach my $domain (@domains) {
     my $host = $pconf->get("/hosts/{domain eq $domain}/{:first}");
-    $self->fail("No such domain: $domain") unless $host;
-    my $bucket = $$host{'disabled'} ? $delete : $create;
+    my $bucket = $$opts{'remove'} || !$host || $$host{'disabled'} ? $delete : $create;
     push @$bucket, $domain;
   }
   my $server_tms = App::TMS::Client->new(cwd());
@@ -228,12 +229,14 @@ sub initd {
     $server_tms->exec('compile', 'apache/init.d/domain', $target,
       -use => 'config.hf');
     `chmod u+x,g+x $target`;
-    $self->print(`./$target start`);
+    if ($$opts{'start'}) {
+      system($target, 'start') unless system($target, 'status') eq '0';
+    }
   }
   foreach my $domain (@$delete) {
     my $target = "init.d/$domain";
     if (-e $target) {
-      $self->print(`./$target stop`);
+      system($target, 'stop') if system($target, 'status') eq '0';
       $server_tms->exec('remove', $target);
     }
   }
@@ -275,7 +278,7 @@ sub reconfig {
       my $domain = $$host{'domain'};
       my $vh_dir = "$sconf->{'dir-vhost-root'}/$domain";
       warn "Configuring: $vh_dir\n";
-      `cd $vh_dir;lsn-setup config`;
+      `cd $vh_dir && lsn-setup config`;
       $self->chown($domain);
     }
   }
@@ -412,9 +415,9 @@ sub remove {
   my $self = shift;
   my ($sconf, $pconf) = _get_config();
   my ($opts, @domains) = _domain_opts($pconf, \@_);
+  my $vhost_root = $sconf->get('dir-vhost-root') or die;
   foreach my $domain (@domains) {
     if ($opts->{retire}) {
-      my $vhost_root = $sconf->get('dir-vhost-root') or die;
       # archive domain
       if (-d "$vhost_root/$domain") {
         my $archive_path = $sconf->get('dir-archive')
@@ -427,19 +430,23 @@ sub remove {
         system 'tar', '-cjpf', $archive, $domain;
         chdir $cwd;
         throw Error::Simple "Archive not created\n" unless -e $archive;
-        dir_remove("$vhost_root/$domain");
-        warn "Directory not deleted\n" if -e "$vhost_root/$domain";
       }
-      # remove proxy config
-      if (my $host = $pconf->get("/hosts/{domain eq $domain}/{:first}")) {
-        $pconf->delete("/hosts/{domain eq $domain}");
-        $pconf->save();
-      } else {
-          throw Error::Simple "No such domain";
-      }
-      # remove user
-      system('userdel', $domain) unless $sconf->{'use-global-user'};
     }
+    # remove proxy config
+    if (my $host = $pconf->get("/hosts/{domain eq $domain}/{:first}")) {
+      $pconf->delete("/hosts/{domain eq $domain}");
+      $pconf->save();
+    } else {
+        throw Error::Simple "No such domain";
+    }
+    # remove user
+    system('userdel', $domain) unless $sconf->{'use-global-user'};
+    # remove initd script
+    $self->initd($domain, -remove => 1);
+    # remove virtual host directory (after initd stops)
+    dir_remove("$vhost_root/$domain");
+    warn "Directory not deleted\n" if -e "$vhost_root/$domain";
+    # update configs
     my $server_tms = App::TMS::Client->new(cwd());
     $server_tms->exec('update');
   }
@@ -502,7 +509,7 @@ sub chown {
   my ($user, $group, $gsvn) = ();
   foreach my $domain (@domains) {
     my $vh_dir = "$sconf->{'dir-vhost-root'}/$domain";
-    `cd $vh_dir;lsn-setup chown`;
+    `cd $vh_dir && lsn-setup chown`;
   }
 }
 
@@ -526,7 +533,7 @@ sub rmtmp {
     dir_remove $dir;
     dir_create $dir;
     print "Removed contents of: $dir\n";
-    `cd $vh_dir;lsn-setup chown`;
+    `cd $vh_dir && lsn-setup chown`;
   }
 }
 
