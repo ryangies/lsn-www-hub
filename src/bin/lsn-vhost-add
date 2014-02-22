@@ -70,6 +70,9 @@ if [ $(getenforce) == 'Enforcing' ]; then
   semanage fcontext -a -t httpd_sys_rw_content_t "$vhdir/$dn"
   restorecon -v "$vhdir/$dn"
 fi
-echo "* Import/create $vhdir/$dn/htdocs" > /dev/stderr
-echo "* Restart proxy server" > /dev/stderr
-echo "* Start Apache: /etc/livesite/init.d/$dn start" > /dev/stderr
+echo "------------------------------------------------------------" > /dev/stderr
+echo "Manual next steps:" > /dev/stderr
+echo "  * Import/create $vhdir/$dn/htdocs" > /dev/stderr
+echo "  * Restart proxy server" > /dev/stderr
+echo "  * Start Apache: /etc/livesite/init.d/$dn start" > /dev/stderr
+echo "------------------------------------------------------------" > /dev/stderr
