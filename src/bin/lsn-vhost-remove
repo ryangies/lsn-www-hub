@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# ------------------------------------------------------------------------------
+# Defaults
+# ------------------------------------------------------------------------------
+dir_config=${LSN_CONFIG_DIR:-/etc/livesite}
+dir_archive=$(lsn-hf get config.hf/dir-archive -n -d "${dir_config}")
+dir_vhost_root=$(lsn-hf get config.hf/dir-vhost-root -n -d "${dir_config}")
+opt_archive=false
+domain=
+
+# ------------------------------------------------------------------------------
+# usage - Display command usage
+# ------------------------------------------------------------------------------
+function usage () {
+  name=$(basename $0)
+  cat <<__end
+usage:
+  $name [-h|--help]
+  $name [options] domain-name
+about:
+  $name will permanently remove the virtual domain from the web server.
+options:
+  -a|--archive      Archive the vhost directory
+examples:
+  $name example.com
+  $name --archive example.com
+__end
+}
+
+# ------------------------------------------------------------------------------
+# ask_yn - Ask a yes/no question
+# ask_yn 'Prompt'
+# ------------------------------------------------------------------------------
+function ask_yn () {
+  local yn=false;
+  prompt="$1 [n] "
+  while true; do
+    read -p "$prompt" chr
+    case $chr in
+      [Yy]* ) yn=true; break;;
+      * ) yn=false; break;;
+    esac
+  done
+  if ($yn); then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Main
+# ------------------------------------------------------------------------------
+
+while [ $# -gt 0 ]; do
+  case $1 in 
+    -\?|--help)         usage; exit 0;;
+    -a|--archive)       opt_archive=true; shift;;
+    -*)                 usage; exit 1;;
+    [^-]*)              break;; 
+  esac
+done      
+
+if [ $# -le 0 ]; then
+  usage
+  exit 0
+fi
+
+# Domain name
+domain=$1
+
+if [ ! -d "$dir_vhost_root" ]; then
+  echo "VirtualHosts directory not found: $dir_vhost_root"
+  exit 0
+fi
+
+if [ -z "$domain" ]; then
+  echo "Domain name not specified (try --help)"
+  exit 0
+fi
+
+echo "Domain         ${domain}" > /dev/stderr
+echo "Directory      ${dir_vhost_root}/${domain}" > /dev/stderr
+if $opt_archive; then
+  echo "Archive        ${dir_archive}/${domain}.tar.bz2" > /dev/stderr
+fi
+
+if (ask_yn "Remove domain configuration and delete the directory"); then
+  if $opt_archive; then
+    lsn-server-config remove $domain -retire
+  else
+    lsn-server-config remove $domain
+  fi
+fi
