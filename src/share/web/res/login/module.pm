@@ -9,7 +9,6 @@ sub login {
   if ($Hub->get('/sys/session')->login($args{'un'}, $args{'h2'})) {
     return 'true';
   } else {
-    sleep 2;
     my $nonce = get_nonce();
     throw Error::Simple "Login failed; nonce=$nonce;";
   }
