@@ -50,10 +50,14 @@ sub parse {
 
   if (index($text, '[') == 0) {
     $text =~ s/^\[([^\]]+)\] // and $date = $1;
-    $text =~ s/^\[(\w+)\] // and $level = $1;
+    $text =~ s/^\[([\w:]+)\] // and $level = $1;
+    $text =~ s/^\[pid (\w+)\] // and $pid = $1;
     $text =~ s/^([^:()]+)\((\d+)\): // and ($filename, $line_no) = ($1, $2);
     $text =~ s/^\[client ([^\]]+)\] // and $client = $1;
   }
+
+  my @level = split /:/, $level;
+  $#level and $level = $level[1];
 
   if (index($text, '<') == 0) {
     $text =~ s/^<(\w+)> // and $phase = $1;
@@ -90,27 +94,41 @@ package main;
 use strict;
 use warnings FATAL => qw(all);
 use App::Console::Color qw(:all);
+use Data::Hub::Util qw(dir_read path_join);
 
 our $PerfReport = undef;
-our $LogFile = '/var/log/httpd/error_log';
+our $LogFile = '';
+our $DefaultLogFile = '/var/log/httpd/error_log';
 our $Lines = 20;
 our $Sort = 0;
+our $ShowFilenameOnly = 0;
 our $ShowTimes = 0;
+our $ShowTimestamp = 0;
 our $Regex = undef;
 our @Entries = ();
 our @Result = ();
 
 sub _usage {
 print <<__end;
-  -p          performance report
-  -a          show all relevant lines
-  -t          show times
-  -n          no colors
-  -l 10       show only last 10 relevant lines
-  -f path     path to error_log
-  -g regex    grep for this
-
-  to disable colors: export ANSI_COLORS_DISABLED=1
+usage:
+  $0 -?|-h|-help|help         Show this help
+  $0 [options]                Use the default log file
+  $0 [options] error_log      Use a specific log file
+  $0 [options] error_log_dir  Use the last-modified file
+options:
+  -n          Just output the filename
+  -p          Performance report
+  -a          Show all relevant lines
+  -t          Show timing, process, and thread
+  -T          Show timestamp
+  -l 10       Show only last 10 relevant lines
+  -g regex    Grep for this
+notes:
+  * Uses the `tac` command.
+  * Default log file is:
+      the last-modified file in ./logs, or
+      $DefaultLogFile
+  * To disable colors: export ANSI_COLORS_DISABLED=1
 __end
 # -s          sort results by pid and elapsed time
 }
@@ -119,20 +137,43 @@ __end
 while (@ARGV) {
   my $arg = shift @ARGV;
   if ($arg =~ s/^-//) {
+    $arg =~ /n/ and $ShowFilenameOnly = 1;
     $arg =~ /p/ and $PerfReport = 1;
     $arg =~ /a/ and $Lines = 'ALL';
 #   $arg =~ /s/ and $Sort = 1;
     $arg =~ /t/ and $ShowTimes = 1;
-    $arg =~ /n/ and $ENV{ANSI_COLORS_DISABLED} = 1;
+    $arg =~ /T/ and $ShowTimestamp = 1;
     $arg eq 'l' and $Lines = shift @ARGV || 0;
-    $arg eq 'f' and $LogFile = shift @ARGV || '';
+    $arg eq 'f' and $LogFile = shift @ARGV || ''; # DEPRECATED
     $arg eq 'g' and $Regex = shift @ARGV || '';
     if ($arg eq '?' || $arg eq 'h' || $arg eq '-help' || $arg eq 'help') {
       exit _usage();
     }
     next;
+  } else {
+    $LogFile = $arg;
   }
-  die "Unknown option: $arg\n";
+}
+
+if (!$LogFile) {
+  $LogFile = -d './logs'
+    ? './logs'
+    : $DefaultLogFile;
+}
+
+if (-d $LogFile) {
+  my $dir = $LogFile;
+  my @names = reverse sort { -M "$dir/$a" <=> -M "$dir/$b" }
+      grep /error_log/, (grep -t, dir_read($dir));
+  die 'Log file not found' unless @names;
+  $LogFile = path_join $dir, pop @names;
+}
+
+if ($ShowFilenameOnly) {
+  printf "%s\n", $LogFile;
+  exit 0;
+} else {
+  c_printf("%_Bs\n", $LogFile);
 }
 
 # Read entries from the log file
@@ -158,9 +199,11 @@ if ($PerfReport) {
     my $fmt = $$entry{'level'} eq 'error' ? '%_rs' :
               $$entry{'level'} eq 'warn'  ? '%_ms' :
               $$entry{'level'} eq 'info'  ? '%_bs' : '%s';
-    push @Result, $ShowTimes
-      ? c_sprintf("%_gs $fmt\n", $entry->sort_key, $$entry{'message'})
-      : c_sprintf("$fmt\n", $$entry{'message'});
+    my @line = ();
+    $ShowTimestamp and push @line, c_sprintf('%_gs', $entry->{'date'});
+    $ShowTimes and push @line, c_sprintf('%_gs', $entry->sort_key);
+    push @line, c_sprintf("$fmt\n", $$entry{'message'});
+    push @Result, join(' ', @line);
   }
 }
 print $_ for @Result;
