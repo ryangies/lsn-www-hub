@@ -8,7 +8,7 @@ license => mit
 version => @{
   5
   0
-  271
+  274
 }
 scripts => @{
   src/bin/lsn-server-config
@@ -33,67 +33,6 @@ include => @{
 pre_compile => @{
 }
 depends => %{
-  APR::Const
-  APR::Finfo
-  APR::OS
-  APR::URI
-  Algorithm::KeyGen
-  Apache2::Access
-  Apache2::Connection
-  Apache2::Const
-  Apache2::Cookie
-  Apache2::Directive
-  Apache2::Filter
-  Apache2::Log
-  Apache2::MPM
-  Apache2::Module
-  Apache2::Request
-  Apache2::RequestIO
-  Apache2::RequestRec
-  Apache2::RequestUtil
-  Apache2::Response
-  Apache2::ServerRec
-  Apache2::ServerUtil
-  Apache2::SubRequest
-  Apache2::URI
-  Apache2::Upload
-  CGI::Cookie
-  CSS::Minifier::XS
-  Data::Format::JavaScript
-  Data::Format::Nml::Document
-  Data::Format::XFR
-  Data::Format::Xml
-  Data::Hub
-  Data::Hub::Container
-  Data::Hub::FileSystem::Node
-  Data::Hub::Util
-  Data::OrderedHash
-  Data::UUID
-  Digest::SHA1
-  Encode
-  Error
-  Error::Logical
-  Error::Programatic
-  Error::Simple
-  Fcntl
-  GD
-  HTTP::Date
-  Image::Size
-  JSON::XS
-  JavaScript::Minifier::XS
-  LWP::UserAgent
-  List::Util
-  Misc::Stopwatch
-  ModPerl::Util
-  Parse::StringTokenizer
-  Parse::Template::Standard
-  Parse::Template::Web
-  Perl::Class
-  Perl::Module
-  Perl::Options
-  Perl::Util
-  Scalar::Util
-  Tie::Hash
 }
 about => %{
   copyright.txt => ${
