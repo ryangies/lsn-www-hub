@@ -40,8 +40,12 @@ sub _domain_opts {
   my ($pconf, $args) = @_;
   my $opts = my_opts($args);
   my $domain_arg = shift @$args or throw Error::Simple "No domain name provided\n";
-  my @domains = $domain_arg eq 'all'
-    ? $pconf->get("/hosts/*/domain")->values()
+  my $select =
+    $domain_arg eq 'all-enabled' ? "/hosts/{?!disabled}/domain" :
+    $domain_arg eq 'all-disabled' ? "/hosts/{?disabled}/domain" :
+    $domain_arg eq 'all' ? "/hosts/*/domain" : undef;
+  my @domains = $select
+    ? $pconf->get($select)->values()
     : split ',', $domain_arg;
   ($opts, @domains);
 }
