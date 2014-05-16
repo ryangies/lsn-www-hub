@@ -129,7 +129,7 @@ files => @{
   lsn/forms/InputTextarea.js
   lsn/forms/InputCheckbox.js
   # Page layout
-  lsn/layout/layout.js
+  lsn/layout.js
   lsn/layout/ResizeRule.js
   lsn/layout/Area.js
   lsn/layout/Layout.js
