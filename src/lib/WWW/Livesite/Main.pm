@@ -45,6 +45,7 @@ sub new {
   $self->{sys}{stopwatch} = undef;
   $self->{sys}{request} = WWW::Livesite::Request->new();
   $self->{sys}{response} = WWW::Livesite::Response->new();
+  $self->{sys}{session} = undef;
   $self->{responders} = undef;
   $self->{forbidden} = [];
   $self->{ignored} = [];
@@ -87,6 +88,7 @@ sub recycle {
 
 sub subrequest {
   my $self = shift;
+  $self->{sys}{log}->info("New subrequest");
   $self->{sys}{response}->init;
   $self->{node} = undef;
   $self->{res} = undef;

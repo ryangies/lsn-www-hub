@@ -2,6 +2,7 @@ package WWW::Livesite::Responders::Directory;
 use strict;
 use Perl::Module;
 use Data::Hub qw($Hub);
+use Data::Hub::Util qw(FS);
 use Error::Logical;
 use base qw(WWW::Livesite::Responders::Base);
 
@@ -15,15 +16,18 @@ our $VERSION = 0.1;
 # TODO If Options +Indexes is turned on, do not return an object in the
 # contructor.
 
-sub _redir {
+sub internal_redirect {
   my $self = shift;
-  my $name = shift;
+  my $uri = shift;
   my $resp = $Hub->{sys}{response};
-  my $uri = $self->{uri};
-  my $params = $Hub->{sys}{request}{qs}->to_string;
-  $resp->{'internal_redirect'} = $params
-    ? "$uri$name?$params"
-    : "$uri$name";
+  $resp->{'internal_redirect'} = $uri;
+}
+
+sub client_redirect {
+  my $self = shift;
+  my $uri = shift;
+  my $resp = $Hub->{sys}{response};
+  $resp->{headers}{'Location'} = $uri;
 }
 
 sub compile {
@@ -34,8 +38,24 @@ sub compile {
 
   # DirectorySlash equivilent
   if (substr($uri, -1) ne '/') {
-    $resp->{headers}{'Location'} = $uri . '/';
-    return;
+    return $self->client_redirect($uri . '/');
+  }
+
+  # First page according to sitemap (trumps index file)
+  if (my $sitemap_addr = $Hub->{sys}{conf}->get('ext/sitemap/addr')) {
+    if (my $sitemap = $Hub->get($sitemap_addr)) {
+      if (my $entry = $sitemap->get($res->get_addr)) {
+        for ($entry->keys) {
+          /^\./ and next;
+          my $node = $$res{$_};
+          if (isa($node, FS('Directory'))) {
+            return $self->client_redirect($node->get_addr . '/');
+          } elsif (isa($node, FS('File'))) {
+            return $self->internal_redirect($node->get_addr);
+          }
+        }
+      }
+    }
   }
 
   # Index file
@@ -43,19 +63,7 @@ sub compile {
     foreach my $name (@$indexes) {
       if (exists $$res{$name}) {
         # Yes, there is an index, redirect accordingly.
-        return $self->_redir($name);
-      }
-    }
-  }
-
-  # First page according to sitemap
-  if (my $sitemap_addr = $Hub->{sys}{conf}->get('ext/sitemap/addr')) {
-    if (my $sitemap = $Hub->get($sitemap_addr)) {
-      if (my $entry = $sitemap->get($res->get_addr)) {
-        for ($entry->keys) {
-          /^\./ and next;
-          return $self->_redir($_);
-        }
+        return $self->internal_redirect("$uri$name");
       }
     }
   }

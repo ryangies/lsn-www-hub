@@ -119,9 +119,8 @@ sub _map_to_storage_handler {
       #
       return Apache2::Const::NOT_FOUND unless $r->uri eq $node->get_addr;
 
+      # The requested URI maps to a valid node
       $Log->debug(sprintf('TRACE: Mapped %s to %s', $r->uri, $node->get_path));
-
-      # The requested URI maps to a valid file
       _set_finfo($r, $node->get_path);
       return Apache2::Const::OK;
 
@@ -189,7 +188,7 @@ sub _fixup_handler {
   my $r = _handler_args(@_);
   my $req = $Main->{sys}{request};
   my $node = $Main->get_fs_node;
-  my $uri = $r->uri;
+  my $uri = $r->uri; # not always a node, includes trailing slash
 
   # The uri for sub-requests is not known until this point
   $req->set_uri($uri);
@@ -210,11 +209,14 @@ sub _fixup_handler {
     ? undef
     : $Main->{'sys'}{'session'}->get_user();
 
-  # Disable DirectorySlash when there is a responder which handles directories
-  # otherwise the responder will never be called as mod_dir (or is it
-  # mod_autoindex) takes over.
+  # We have an issue with disabling mod_dir in Apache 2.4 and later.
+  # http://mail-archives.apache.org/mod_mbox/perl-modperl/201404.mbox/%3C5348FB64.6010008%40livesite.net%3E
+  # So, directory handlers (in order to trump mod_dir/mod_autoindex) are invoked here.
   if ($rr && isa($node, FS('Directory'))) {
-    $r->add_config(['DirectorySlash Off']);
+    my $status = _response_handler($r);
+    return $status == Apache2::Const::OK
+      ? Apache2::Const::DONE
+      : $status;
   }
 
   # If a prior request has been cached and it is still valid, respond 
@@ -779,12 +781,14 @@ sub _new_request_cycle {
   
     # Glean information from the Apache configuration
     my $tree = Apache2::Directive::conftree();
-    my @nodes = $tree->lookup('DirectoryIndex');
+    my @nodes = $tree->lookup('DirectoryIndex')
+      or $Log->warn('No DirectoryIndex found');
     my @indexes = ();
     for (@nodes) {
       next if ref;
       push @indexes, split /\s/;
     }
+    $Log->debug('DirectoryIndex: ', @indexes);
     $Main->{sys}{server}{config}{indexes} = \@indexes;
 
     # Find Livesite configuration files specified in the Apache configuration,
@@ -1039,36 +1043,3 @@ sub _save_debug_info {
 1;
 
 __END__
-
-# cgi-cookie-notes
-#
-# Using CGI::Cookie because Apache2::Cookie::Jar is throwing
-# 'Expected token not present' and it's really hard to glean what token is 
-# expected--this appears to be a false posititve. There is [apparently] no 
-# graceful fallback to ignore malformed av-pairs, however CGI::Cookie parses
-# without noise.
-#
-### @removed 5/15/2012
-
-    my $jar = Apache2::Cookie::Jar->new($r);
-    my $cookies = eval {$jar->cookies};
-    unless ($cookies) {
-      $Log->debug("Apache2::Cookie::Jar parsing error, punting to CGI::Cookie: ", $@);
-      $cookies = CGI::Cookie->fetch($r);
-    }
-
-### @end removed
-
-### Attempt at gracefull fallback (fails on each of @names, result is no cookies)
-
-    my @names = $@->jar;
-    foreach my $k (@names) {
-      if (my $v = eval {$jar->cookies($k)}) {
-        $cookies->{$k} = $v;
-      } else {
-        $Log->error("Cookie parsing error ($k): ", $@);
-        # TODO - Clear the misbehaving cookie
-        # my $cookie = Apache2::Cookie->new($r, -name => $k, -path => '/', -value => '', -expires => 0);
-        # $resp->{'headers'}{'Set-Cookie'} = $str;
-      }
-    }
