@@ -8,7 +8,7 @@ license => mit
 version => @{
   5
   0
-  274
+  275
 }
 scripts => @{
   src/bin/lsn-server-config
@@ -31,6 +31,7 @@ include => @{
   }
 }
 pre_compile => @{
+  ./scripts/mkjs.sh -force
 }
 depends => %{
 }
