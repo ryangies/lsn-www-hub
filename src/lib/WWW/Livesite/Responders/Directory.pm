@@ -41,7 +41,17 @@ sub compile {
     return $self->client_redirect($uri . '/');
   }
 
-  # First page according to sitemap (trumps index file)
+  # Index file (trumps sitemap)
+  if (my $indexes = $Hub->{sys}{server}{config}{indexes}) {
+    foreach my $name (@$indexes) {
+      if (exists $$res{$name}) {
+        # Yes, there is an index, redirect accordingly.
+        return $self->internal_redirect("$uri$name");
+      }
+    }
+  }
+
+  # First page according to sitemap
   if (my $sitemap_addr = $Hub->{sys}{conf}->get('ext/sitemap/addr')) {
     if (my $sitemap = $Hub->get($sitemap_addr)) {
       if (my $entry = $sitemap->get($res->get_addr)) {
@@ -54,16 +64,6 @@ sub compile {
             return $self->internal_redirect($node->get_addr);
           }
         }
-      }
-    }
-  }
-
-  # Index file
-  if (my $indexes = $Hub->{sys}{server}{config}{indexes}) {
-    foreach my $name (@$indexes) {
-      if (exists $$res{$name}) {
-        # Yes, there is an index, redirect accordingly.
-        return $self->internal_redirect("$uri$name");
       }
     }
   }

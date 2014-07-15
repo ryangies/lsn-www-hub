@@ -116,7 +116,7 @@ $USAGE{'pem'} = {
   summary => 'Create the .pem file for use with pound and nginx',
   params => Data::OrderedHash->new(
     '<domain>' => 'Domain name, e.g., example.com',
-    '<issuer>' => 'Certificate issuer, specifies <issuer>_bundle.crt',
+    '<issuer>' => 'Certificate issuer, specifies the issuer bundle file',
   ),
 };
 
@@ -125,13 +125,13 @@ sub pem {
   my $opts = my_opts(\@_);
   my $dom = shift or $self->fail('Missing domain name');
   my $issuer = shift || 'self';
-  $self->_depends("${issuer}_bundle.crt", "$dom.key", "$dom.crt");
+  $self->_depends("${issuer}", "$dom.key", "$dom.crt");
   # Generate passphraseless private key (so that web server can be restarted 
   # without prompting)
   my $rc = system "openssl", "rsa", "-in", "$dom.key", "-out", "$dom.key.nopass";
   # Generate Apache-style certificate chain
-  $self->_concat("$dom.pem", "$dom.key.nopass", "$dom.crt", "${issuer}_bundle.crt"); # order is important
-  $self->_concat("$dom.nginx.pem", "$dom.crt", "${issuer}_bundle.crt"); # order is important
+  $self->_concat("$dom.pem", "$dom.key.nopass", "$dom.crt", "${issuer}"); # order is important
+  $self->_concat("$dom.nginx.pem", "$dom.crt", "${issuer}"); # order is important
   # Show output files
   -e "$dom.pem" and $self->printf("%-30s: %_bs\n", "Chained certificate (Apache)", "$dom.pem");
   -e "$dom.nginx.pem" and $self->printf("%-30s: %_bs\n", "Chained certificate (NGiNX)", "$dom.nginx.pem");
@@ -194,9 +194,9 @@ bundle (e.g., gd_bundle.crt for GoDaddy) and place those files in this working
 directory.
 
 3) Now generate the PEM with the following command.  The second parameter (issuer) 
-is simply the prefix to the _bundler.crt file, in this case gd for GoDaddy:
+is simply the path to the issuer_bundle.crt file, in this case gd_bundle.crt for GoDaddy:
 
-  lsn-cert pem example.com gd
+  lsn-cert pem example.com gd_bundle.crt
 
 4) You now have a PEM file which is placed in the config/ssl subdirectory of the 
 domain's home directory.  Now you may cleanup this nice clean-up and/or archive 
@@ -228,7 +228,7 @@ passwords you entered.
     inflating: example.com.crt         
     inflating: gd_bundle.crt           
   devbox ryan ~/tmp/cert
-  $ lsn-cert pem example.com gd
+  $ lsn-cert pem example.com gd_bundle.crt
   Enter pass phrase for example.com.key:
   writing RSA key
   devbox ryan ~/tmp/cert
