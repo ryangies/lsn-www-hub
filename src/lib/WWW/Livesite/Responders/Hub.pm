@@ -43,7 +43,7 @@ sub new {
 
 sub get_permission_mode {
   my $self = shift;
-  'x';
+  'x'; # must have execute permission to use this responder
 }
 
 sub can_upload {
@@ -243,7 +243,7 @@ sub _prev_key {
 # fetch - Fetch a resource
 # ------------------------------------------------------------------------------
 
-$Commands{fetch} = sub {
+$Commands{'fetch'} = sub {
   my $self = shift;
   my $ura = shift || $self->get_target();
   my $args = $$self{'params'};
@@ -287,7 +287,7 @@ sub _fetch_into {
   my $self = shift;
   my $struct = shift;
 
-# Just found the opposite, that htis decoding was breaking on a new filename... maybe
+# Just found the opposite, that this decoding was breaking on a new filename... maybe
 # something changed (Ryan 11/2012)
 # my $addr = Encode::decode('utf8', shift); # key names using extended chars
   my $addr = shift;
@@ -365,18 +365,20 @@ sub _fetch_into {
 # store - Store a value
 # ------------------------------------------------------------------------------
 
-$Commands{store} = sub {
+$Commands{'store'} = sub {
   my $self = shift;
   my $resp = $$self{'result'};
   my $params = $$self{'params'};
-  my ($ura, $value, $mtime) = @$params{'target', 'value', 'mtime'};
+  my ($ura, $value, $mtime, $origin) = @$params{'target', 'value', 'mtime', 'origin'};
   $self->check_auth($ura, 'w');
   throw Error::Programatic('Invalid mtime') if $mtime && $mtime !~ /^\d+$/;
   throw Error::Logical('Undefined value') unless defined $value;
   my $storage = $Hub->find_storage($ura);
   throwf Error::Logical('Not a storable resource: %s', $ura) unless $storage;
-  throw Error::Logical('File has been modified')
-    if ($mtime && $storage->get_mtime > $mtime);
+  if ($mtime && $storage->get_mtime > $mtime) {
+    throw Error::Logical('File has been modified')
+      if (!defined $origin) || ($Hub->get($ura) ne $origin);
+  }
   $Hub->set($ura, $value);
   $storage->save();
   my $name = addr_name($ura);
@@ -393,19 +395,33 @@ $Commands{store} = sub {
 # update - Update values
 # ------------------------------------------------------------------------------
 
-$Commands{update} = sub {
+$Commands{'update'} = sub {
   my $self = shift;
   my $resp = $$self{'result'};
   my $params = $$self{'params'};
-  my ($ura, $values, $mtime) = @$params{'target', 'values', 'mtime'};
+  my ($ura, $values, $mtime, $origins)
+    = @$params{'target', 'values', 'mtime', 'origins'};
   $self->check_auth($ura, 'w');
   throw Error::Programatic('Invalid mtime') if $mtime && $mtime !~ /^\d+$/;
   throw Error::Logical('Undefined values') unless defined $values;
   throw Error::Logical('Values is not a hash') unless isa($values, 'HASH');
+  throw Error::Logical('Origin is not a hash') if defined $origins && !isa($origins, 'HASH');
   my $storage = $Hub->find_storage($ura);
   throwf Error::Logical('Not a storable resource: %s', $ura) unless $storage;
-  throw Error::Logical('File has been modified')
-    if ($mtime && $storage->get_mtime > $mtime);
+  if ($mtime && $storage->get_mtime > $mtime) {
+    my $conflict = 0;
+    if (defined $origins) {
+      foreach my $k (keys %$values) {
+        if ($Hub->get("$ura/$k") ne $$origins{$k}) {
+          $conflict = 1;
+          last;
+        }
+      }
+    } else {
+      $conflict = 1;
+    }
+    $conflict and throw Error::Logical('File has been modified');
+  }
   foreach my $k (keys %$values) {
     $Hub->set("$ura/$k", $$values{$k});
   }
