@@ -89,9 +89,11 @@ sub compile {
     my $disp = sprintf 'attachment; filename="%s"', $fn;
     $resp->{'headers'}{'Content-Disposition'} = $disp;
   }
-  $resp->{'send_file'} = $new_path;
+  if (-e $new_path) {
+    $resp->{'send_file'} = $new_path;
+    $resp->{'can_cache'} = 1;
+  }
   $resp->{'has_compiled'} = 1;
-  $resp->{'can_cache'} = 1;
 }
 
 1;
