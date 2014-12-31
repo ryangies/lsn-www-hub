@@ -21,7 +21,7 @@ sub _unescape {
 sub _escape {
   my $str = shift;
   $str =~ tr/ /+/;
-  $str =~ s/([^\w\+])/sprintf('%%%x',ord($1))/eg;
+  $str =~ s/([^\w\+])/sprintf('%%%02x',ord($1))/eg;
   $str;
 }
 
