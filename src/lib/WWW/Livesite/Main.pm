@@ -88,7 +88,7 @@ sub recycle {
 
 sub subrequest {
   my $self = shift;
-  $self->{sys}{log}->info("New subrequest");
+  $self->{sys}{log}->debug("New subrequest");
   $self->{sys}{response}->init;
   $self->{node} = undef;
   $self->{res} = undef;
