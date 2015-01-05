@@ -781,12 +781,20 @@ sub _new_request_cycle {
   
     # Glean information from the Apache configuration
     my $tree = Apache2::Directive::conftree();
-    my @nodes = $tree->lookup('DirectoryIndex')
-      or $Log->warn('No DirectoryIndex found');
+    my @vhosts = $tree->lookup('VirtualHost');
     my @indexes = ();
-    for (@nodes) {
-      next if ref;
-      push @indexes, split /\s/;
+    foreach my $vhost (@vhosts) {
+      if ($$vhost{'ServerName'} eq $s->server_hostname()) {
+        @indexes = split /[\s]+/, $$vhost{'DirectoryIndex'};
+      }
+    }
+    unless (@indexes) {
+      my @nodes = $tree->lookup('DirectoryIndex')
+        or $Log->warn('No DirectoryIndex found');
+      for (@nodes) {
+        next if ref;
+        push @indexes, split /[\s]+/;
+      }
     }
     $Log->debug('DirectoryIndex: ', @indexes);
     $Main->{sys}{server}{config}{indexes} = \@indexes;
