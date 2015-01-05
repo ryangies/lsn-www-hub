@@ -386,6 +386,8 @@ sub rename {
   my $old_vh_dir = "$sconf->{'dir-vhost-root'}/$old_domain";
   my $vh_dir = "$sconf->{'dir-vhost-root'}/$domain";
   if (-d $old_vh_dir) {
+    # remove initd script
+    $self->initd($old_domain, -remove => 1);
     dir_move($old_vh_dir, $vh_dir);
     # Connect to configuration-template repository
     my $tms = App::TMS::Client->new($vh_dir);
@@ -403,6 +405,8 @@ sub rename {
   }
   # Update features
   $self->update($domain, -enable => $items);
+  # Create initd script
+  $self->initd($domain);
 }
 
 # ------------------------------------------------------------------------------
