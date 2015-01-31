@@ -96,13 +96,13 @@ sub get_valid {
 # ------------------------------------------------------------------------------
 # validate_value - Return a value only when it passes validation
 #
-#   my $value = $params->get_valid('key', 'value');
-#   my $value = $params->get_valid('key', 'value', -type => 'digits'); L<1>
-#   my $value = $params->get_valid('key', 'value', -regex => /re/);
-#   my $value = $params->get_valid('key', 'value', -sub => \&validator);
-#   my $value = $params->get_valid('key', 'value', -list => \@list);
-#   my $value = $params->get_valid('key', 'value', -min => 1);
-#   my $value = $params->get_valid('key', 'value', -max => 64);
+#   my $value = $params->validate_value('key', 'value');
+#   my $value = $params->validate_value('key', 'value', -type => 'digits'); L<1>
+#   my $value = $params->validate_value('key', 'value', -regex => /re/);
+#   my $value = $params->validate_value('key', 'value', -sub => \&validator);
+#   my $value = $params->validate_value('key', 'value', -list => \@list);
+#   my $value = $params->validate_value('key', 'value', -min => 1);
+#   my $value = $params->validate_value('key', 'value', -max => 64);
 #
 # Custom validators should be placed in the server configuration.
 #
@@ -125,12 +125,12 @@ sub get_valid {
 # The C<named> hash is queried for validating fields with the associated
 # name.
 #
-#   my $fname = $params->get_valid('first_name');
+#   my $fname = $params->validate_value('first_name');
 #
 # The C<types> hash is used when the code specifies a C<-type> option, and
 # will overried any built-in logic for that type.
 #
-#   my $ccard = $params->get_valid('card_number', -type => 'cc_number');
+#   my $ccard = $params->validate_value('card_number', -type => 'cc_number');
 #
 # N<1> Currently defined types are:
 #
