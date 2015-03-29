@@ -172,6 +172,7 @@ sub target_clean {
     dir_remove $path;
   }
   delete $$self{'build_hub'}; # semiphoric
+  delete $$self{'build_dir'};
 }
 
 sub prepare {
@@ -191,7 +192,12 @@ sub prepare {
   }
 
   # Filesystem trees
+  #
+  # build_dir is _only_ used by us,
+  # build_hub is _only_ used by the parser,
+  # this way the templates can define file-system handlers.
   $$self{'source_hub'} = Data::Hub->new($$self{'project'}{'source_path'});
+  $$self{'build_dir'} = Data::Hub->new($$self{'project'}{'build_path'});
   $$self{'build_hub'} = Data::Hub->new($$self{'project'}{'build_path'});
 
   # Web parser (which compiles source files)
@@ -201,7 +207,7 @@ sub prepare {
 
   # Last run time (use for is-modified check)
   $$self{'last_run_time'} = $build_path_exists
-    ? $$self{'build_hub'}->get_fs_root->get_mtime 
+    ? $$self{'build_dir'}->get_fs_root->get_mtime 
     : 0;
 }
 
@@ -217,10 +223,12 @@ sub target_all {
   # Compile
   $$self{'console'}->log("Build: %s\n", $$project{'build_path'});
   $self->exec_commands('build_path', $project->get('exec/before_compile'));
+  $$self{'build_dir'}->expire();
   $$self{'build_hub'}->expire();
   my $excludes = $$project{'compile_excludes'};
   my $ext = $$project{'filetypes'} || 'js|html|css';
-  foreach my $file ($$self{'build_hub'}->get("/**|{-?:=~($ext)\$}")->values) {
+  local $Data::Hub::Hub = $$self{'build_hub'};
+  foreach my $file ($$self{'build_dir'}->get("/**|{-?:=~($ext)\$}")->values) {
     my $is_excluded = 0;
     my $addr = $file->get_addr;
     for (@$excludes) {
