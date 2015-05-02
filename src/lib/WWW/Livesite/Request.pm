@@ -11,13 +11,13 @@ use HTTP::Date qw(str2time);
 sub new {
   my $pkg = ref($_[0]) ? ref(shift) : shift;
   my $self = bless {}, $pkg;
-  $self->{xargs} = WWW::Livesite::XArgs->new();
-  $self->{qs} = undef;
-  $self->{uri} = undef;
-  $self->{page} = undef;
-  $self->{headers} = undef;
-  $self->{stack} = []; # previous [sub]request uri info
-  $self->{depth} = 0; # subrequests
+  $self->{'xargs'} = WWW::Livesite::XArgs->new();
+  $self->{'qs'} = undef;
+  $self->{'uri'} = undef;
+  $self->{'page'} = undef;
+  $self->{'headers'} = undef;
+  $self->{'stack'} = []; # previous [sub]request uri info
+  $self->{'depth'} = 0; # subrequests
   $self;
 }
 
@@ -33,15 +33,15 @@ sub new {
 sub set_uri {
   my $self = shift;
   my $uri = shift or return;
-  return $uri if $$self{'depth'} && $self->{uri} eq $uri;
-  $self->{uri} = $uri;
-  my $qs = $self->{qs};
+  return $uri if $$self{'depth'} && $self->{'uri'} eq $uri;
+  $self->{'uri'} = $uri;
+  my $qs = $self->{'qs'};
   my $addr = Data::Hub::Address->new($uri);
   $addr->shift(); # remove empty first segment
   my $qstr = $qs->to_string;
   my $href = $uri . ($qstr ? '?' . $qstr : '');
   my $root = $Hub->get('/sys/server/uri');
-  my $page = $self->{page} = {
+  my $page = $self->{'page'} = {
     full_uri => $root . $uri,
     uri => $uri,
     href => $href,
@@ -86,15 +86,16 @@ sub get_rtag {
     $un,
     $self->{'method'},
     $self->{'scheme'},
+    $Hub->str('/sys/server/name'),
     $self->{'uri'},
-    (%$qs, %$xargs),
+    (%$qs, %$xargs), # do not sort, order can mean different things
   );
-  $$self{rtag_str} = join ('|', @components);
-  $$self{rtag} = checksum($$self{rtag_str});
+  $$self{'rtag_str'} = join ('|', @components);
+  $$self{'rtag'} = checksum($$self{'rtag_str'});
 # $$Hub{'/sys/log'}->warn(
-#   sprintf "RTAG=%s [%s]: %s\n", $$self{rtag}, $$self{uri}, $$self{rtag_str}
+#   sprintf "RTAG=%s [%s]: %s\n", $$self{'rtag'}, $$self{'uri'}, $$self{'rtag_str'}
 # );
-  $$self{rtag};
+  $$self{'rtag'};
 }
 
 # ------------------------------------------------------------------------------

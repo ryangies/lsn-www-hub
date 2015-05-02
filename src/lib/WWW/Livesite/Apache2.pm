@@ -147,32 +147,32 @@ sub _header_parser_handler {
   my $req_uri = APR::URI->parse($r->pool, $r->construct_url);
 
   # Standard request variables
-  my $sys_req = $Main->{sys}{request};
-  $sys_req->{headers} = $r->headers_in;
-  $sys_req->{qs} = $args;
-  $sys_req->{hostname} = $req_uri->hostname;  # example.com
-  $sys_req->{method} = $r->method;            # GET|POST|...
+  my $sys_req = $Main->{'sys'}{'request'};
+  $sys_req->{'headers'} = $r->headers_in;
+  $sys_req->{'qs'} = $args;
+  $sys_req->{'hostname'} = $req_uri->hostname;  # example.com
+  $sys_req->{'method'} = $r->method;            # GET|POST|...
 
   # URI Scheme (http|https)
-  my $ssl_config = $Main->{sys}->get('conf/modules/ssl') || {};
+  my $ssl_config = $Main->{'sys'}->get('conf/modules/ssl') || {};
   if ($$ssl_config{'trust_uri_scheme_header'}) {
     my $k = $$ssl_config{'uri_scheme_header_name'} || 'X-URI-Scheme';
     my $v = $sys_req->{'headers'}{$k};
-    $sys_req->{scheme} = $v || $req_uri->scheme;
+    $sys_req->{'scheme'} = $v || $req_uri->scheme;
   } else {
-    $sys_req->{scheme} = $req_uri->scheme;
+    $sys_req->{'scheme'} = $req_uri->scheme;
   }
 
   # Parse cookies (See cgi-cookie-notes at EOF)
   my $cookies = CGI::Cookie->fetch($r);
-  $sys_req->{cookies} = $cookies;
+  $sys_req->{'cookies'} = $cookies;
 
   # Initialize session
-  my $sid_key = $Main->{sys}{sid_key} = _gen_sid_key($r, $req_uri);
+  my $sid_key = $Main->{'sys'}{'sid_key'} = _gen_sid_key($r, $req_uri);
   my $sid = $cookies->{$sid_key} ? $cookies->{$sid_key}->value : undef;
-  my $sid_keysrc = $Main->{sys}{sid_keysrc};
+  my $sid_keysrc = $Main->{'sys'}{'sid_keysrc'};
   $Log->debug('SESSION: SID (from cookie): ', $sid, " key=${sid_key} [${sid_keysrc}]");
-  my $session = $Main->{sys}{session} = WWW::Livesite::Session->new($sid);
+  my $session = $Main->{'sys'}{'session'} = WWW::Livesite::Session->new($sid);
   $session->authenticate();
 
   return Apache2::Const::DECLINED;
@@ -186,7 +186,7 @@ sub _header_parser_handler {
 sub _fixup_handler {
 
   my $r = _handler_args(@_);
-  my $req = $Main->{sys}{request};
+  my $req = $Main->{'sys'}{'request'};
   my $node = $Main->get_fs_node;
   my $uri = $r->uri; # not always a node, includes trailing slash
 
@@ -252,9 +252,9 @@ sub _fixup_handler {
         # Respone headers MUST be added this way when response caching is in
         # effect.  (Otherwise the cached metadata will not contain these 
         # headers.)
-        my $resp = $Main->{sys}{response};
-        $resp->{headers}{'Content-Disposition'} = $cdisp;
-        $resp->{headers}{'Cache-Control'} = $cc;
+        my $resp = $Main->{'sys'}{'response'};
+        $resp->{'headers'}{'Content-Disposition'} = $cdisp;
+        $resp->{'headers'}{'Cache-Control'} = $cc;
       } else {
         $r->headers_out->add('Content-Disposition' => $cdisp);
         $r->headers_out->add('Cache-Control' => $cc);
@@ -315,9 +315,9 @@ sub _cached_response_handler {
 
 sub _response_handler {
   my $r = _handler_args(@_);
-  my $uri = $Main->{sys}{request}{uri} or die 'URI not set';
+  my $uri = $Main->{'sys'}{'request'}{'uri'} or die 'URI not set';
   my $rr = $Main->get_responder or die 'No responder';
-  my $resp = $Main->{sys}{response};
+  my $resp = $Main->{'sys'}{'response'};
   my $cgi_data = {};
 
   $Log->debug("TRACE: Using responder: $rr");
@@ -343,9 +343,9 @@ sub _response_handler {
     #   application/json    JSON data format
     #   text/json-hash      JSON data format
     #   text/data-xfr       Livesite XFR format
-    my $sys_req = $Main->{sys}{request};
-    my $xfmt = lc($sys_req->{xargs}{'X-Content-Format'} || '');
-    my $ct = lc($sys_req->{headers}{'Content-Type'} || '');
+    my $sys_req = $Main->{'sys'}{'request'};
+    my $xfmt = lc($sys_req->{'xargs'}{'X-Content-Format'} || '');
+    my $ct = lc($sys_req->{'headers'}{'Content-Type'} || '');
 
     if ($xfmt || $ct eq 'application/json') {
 
@@ -367,7 +367,7 @@ sub _response_handler {
       } elsif ($xfmt eq 'text/data-xfr') {
 
         $Log->debug("READ: Parsing XFR");
-        my $xenc = $Main->{sys}{request}{xargs}{'X-Content-Encoding'};
+        my $xenc = $Main->{'sys'}{'request'}{'xargs'}{'X-Content-Encoding'};
         my $xfr = Data::Format::XFR->new($xenc);
         my $data = $xfr->parse($body);
         if (isa($data, 'ARRAY')) {
@@ -395,7 +395,7 @@ sub _response_handler {
 
       # Punt to Apache2::Request to do the work
       $cgi_data = sub {
-        return $Main->{sys}{request}{obj}->param() || {};
+        return $Main->{'sys'}{'request'}{'obj'}->param() || {};
       };
 
     }
@@ -409,11 +409,11 @@ sub _response_handler {
     # For file uploads, we do NOT want /sys/request/cgi to come from the
     # request object, because doing so will cause the body to be read, input
     # filters to run, etc.
-    $cgi_data = $Main->{sys}{request}{qs};
+    $cgi_data = $Main->{'sys'}{'request'}{'qs'};
 
   }
 
-  $Main->{sys}{request}{cgi} = WWW::Livesite::Parameters->new($cgi_data);
+  $Main->{'sys'}{'request'}{'cgi'} = WWW::Livesite::Parameters->new($cgi_data);
 
   # The response object is populated before the output is written to the 
   # network.  As soon as it is started, all access to the file-system is 
@@ -430,18 +430,18 @@ sub _response_handler {
 
   } catch Error::HttpsRequired with {
 
-    my $uri = $Main->{sys}{request}{page}{full_uri};
-    my $qs = $Main->{sys}{request}{qs}->as_string;
-    $$resp{headers}{Location} = $qs
+    my $uri = $Main->{'sys'}{'request'}{'page'}{'full_uri'};
+    my $qs = $Main->{'sys'}{'request'}{'qs'}->as_string;
+    $$resp{'headers'}{'Location'} = $qs
       ? sprintf('https:%s?%s', $uri, $qs)
       : sprintf('https:%s', $uri);
     $Log->warn("Switching schemes, http -> https");
 
   } catch Error::HttpsNotRequired with {
 
-    my $uri = $Main->{sys}{request}{page}{full_uri};
-    my $qs = $Main->{sys}{request}{qs}->as_string;
-    $$resp{headers}{Location} = $qs
+    my $uri = $Main->{'sys'}{'request'}{'page'}{'full_uri'};
+    my $qs = $Main->{'sys'}{'request'}{'qs'}->as_string;
+    $$resp{'headers'}{'Location'} = $qs
       ? sprintf('http:%s?%s', $uri, $qs)
       : sprintf('http:%s', $uri);
     $Log->warn("Switching schemes, https -> http");
@@ -503,7 +503,7 @@ sub _response_handler {
 sub _send_response {
   my $r = shift;
   my $status = shift;
-  my $resp = $Main->{sys}{response};
+  my $resp = $Main->{'sys'}{'response'};
 
   if (my $new_uri = $resp->{'internal_redirect'}) {
     $Log->debug('TRACE: ', "Internal Redirect: $new_uri");
@@ -568,7 +568,7 @@ sub _send_response {
   ));
 
   # Mark the response and return Apache2::Const HTTP status code
-  $resp->{have_sent_body} = 1;
+  $resp->{'have_sent_body'} = 1;
   $status;
 }
 
@@ -579,15 +579,15 @@ sub _send_response {
 sub _send_headers {
   my $r = shift;
   my $status = shift;
-  my $resp = $Main->{sys}{response};
+  my $resp = $Main->{'sys'}{'response'};
 
   # Only send headers once.
-  return $resp->{status} if $resp->{have_sent_headers};
+  return $resp->{'status'} if $resp->{'have_sent_headers'};
 
   # Output Session ID on each request, with the updated expiration.
-  if (my $sid_key = $Main->{sys}{sid_key}) {
-    my $valid_sid = $Main->{sys}->get('session/SID');
-    my $timeout = $Main->{sys}{session}->get_timeout;
+  if (my $sid_key = $Main->{'sys'}{'sid_key'}) {
+    my $valid_sid = $Main->{'sys'}->get('session/SID');
+    my $timeout = $Main->{'sys'}{'session'}->get_timeout;
     $resp->{'cookies'}{$sid_key} = {
       -expires => $timeout,
       -value => $valid_sid,
@@ -639,8 +639,8 @@ sub _send_headers {
   $r->set_last_modified($$resp{'mtime'} || time);
 
   # Mark the response and return the status
-  $resp->{have_sent_headers} = 1;
-  $resp->{status} = $status;
+  $resp->{'have_sent_headers'} = 1;
+  $resp->{'status'} = $status;
 }
 
 # ==============================================================================
@@ -701,7 +701,7 @@ sub _save_change_log {
   $Log->debug('CHANGES: saving change log');
   my $resp = $Main->{'sys'}{'response'} or return;
   my $fs_change_log = $$resp{'fs_change_log'} or return;
-  my $logfile = $Main->{sys}{tmp}->vivify('changelog.yml');
+  my $logfile = $Main->{'sys'}{'tmp'}->vivify('changelog.yml');
   my $entries = $$logfile{'entries'} ||= {};
   my $u = $Main->{'sys'}{'user'};
   my $un = $u ? $u->get_username : 'guest';
@@ -768,11 +768,11 @@ sub _new_request_cycle {
     $Registry{$inst_key} = $Main = WWW::Livesite::Main->new($doc_root);
 
     # Populate information which does not change each request
-    $Main->{sys}{log} = $Log;
-    $Main->{sys}{stopwatch} = $Stopwatch;
+    $Main->{'sys'}{'log'} = $Log;
+    $Main->{'sys'}{'stopwatch'} = $Stopwatch;
     my $server_uri = '//' . $s->server_hostname();
     $server_uri .= ':' . $port if $port ne '80';
-    $Main->{sys}{server} = {
+    $Main->{'sys'}{'server'} = {
       'uri' => $server_uri,
       'name' => $s->server_hostname(),
       'port' => $port,
@@ -797,7 +797,7 @@ sub _new_request_cycle {
       }
     }
     $Log->debug('DirectoryIndex: ', @indexes);
-    $Main->{sys}{server}{config}{indexes} = \@indexes;
+    $Main->{'sys'}{'server'}{'config'}{'indexes'} = \@indexes;
 
     # Find Livesite configuration files specified in the Apache configuration,
     # and append them in proper overlay order.
@@ -848,7 +848,7 @@ sub _enable_response_hook {
   # parameters from the request body. We do not read cgi parameters until this 
   # point, as doing so will invoke  input filters.
   my $rr = $Main->get_responder or die 'No responder';
-  my $req = $Main->{sys}{request}{obj} = Apache2::Request->new(
+  my $req = $Main->{'sys'}{'request'}{'obj'} = Apache2::Request->new(
     $r,
 
 #   Allow uploads for all responders as the template may do the work
@@ -856,7 +856,7 @@ sub _enable_response_hook {
 
 # Defining the temp directory here yields an error when it is already defined
 # in the Apache configuration.
-#   TEMP_DIR => $Main->{sys}{conf}{sys_tmp_dir},
+#   TEMP_DIR => $Main->{'sys'}{'conf'}{'sys_tmp_dir'},
 
   );
 
@@ -949,7 +949,7 @@ sub _gen_sid_key {
   push @sources, $req_uri->scheme
     unless $Main->get_config('/session/share_http_schemes');
   push @sources, $req_uri->hostname;
-  my $sid_keysrc = $Main->{sys}{sid_keysrc} = join(';', @sources, @origins);
+  my $sid_keysrc = $Main->{'sys'}{'sid_keysrc'} = join(';', @sources, @origins);
   'v01' . checksum($sid_keysrc);
 }
 
@@ -960,7 +960,7 @@ sub _gen_sid_key {
 sub _redir {
   my $r = shift;
   my $uri = shift or die;
-  $Main->{sys}{response}{headers}{'Location'} = $uri ;
+  $Main->{'sys'}{'response'}{'headers'}{'Location'} = $uri ;
   return _send_headers($r, Apache2::Const::REDIRECT);
 }
 
@@ -971,10 +971,10 @@ sub _redir {
 sub _redir_auth_required {
   my $r = shift;
   my $info = shift;
-  my $user = $Main->{sys}{session}->get_user();
+  my $user = $Main->{'sys'}{'session'}->get_user();
   my $un = $user ? $user->get_username : '';
   my $g = $user ? $user->get_groups : '';
-  my $resp = $Main->{sys}{response};
+  my $resp = $Main->{'sys'}{'response'};
   my $msg = sprintf('AUTH: Access denied: un=%s; g=%s; res=%s', $un, $g, $r->uri);
   $info and $msg .= "; $info";
   $Log->warn($msg);
@@ -1018,8 +1018,8 @@ sub _server_error {
 sub _save_debug_info {
 
   my $r = shift;
-  my $sys = $Main->{sys};
-  my $tmp = $Main->{sys}{tmp};
+  my $sys = $Main->{'sys'};
+  my $tmp = $Main->{'sys'}{'tmp'};
   if (my $req_hist_size = $sys->get('conf/debug/req_hist_size')) {
     throw Error::Programatic "'req_hist_size' must be numeric\n"
       unless is_numeric($req_hist_size);
@@ -1032,14 +1032,14 @@ sub _save_debug_info {
       method => $r->method,
       uri => $r->uri,
       unparsed_uri => $r->unparsed_uri,
-      qs => $sys->{request}{qs},
-      headers => $sys->{request}{headers},
-      xargs => $sys->{request}{xargs},
-      cgi => $sys->{request}{cgi},
+      qs => $sys->{'request'}{'qs'},
+      headers => $sys->{'request'}{'headers'},
+      xargs => $sys->{'request'}{'xargs'},
+      cgi => $sys->{'request'}{'cgi'},
       response => {
         content_type => $r->content_type,
         status => $r->status_line,
-        headers => $sys->{response}{headers},
+        headers => $sys->{'response'}{'headers'},
       },
     );
     @$reqs > $req_hist_size and splice @$reqs, $req_hist_size;
