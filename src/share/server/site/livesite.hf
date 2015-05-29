@@ -104,6 +104,8 @@ ext => %{
   }
 }
 parser => %{
+  directives => %{
+  }
   bbcodes => %{
   }
 }
