@@ -94,7 +94,15 @@ sub create_web_parser {
     $$options{'base_uri'} = $scheme . '://' . $hostname;
     $$options{'base_uri'} .= ':' . $port if $port ne '80';
   }
-  return Parse::Template::Web->new($Hub, -opts => $options);
+  my $parser = Parse::Template::Web->new($Hub, -opts => $options);
+  if (my $directives = $Hub->get('/sys/conf/parser/directives')) {
+    foreach my $name ($directives->keys()) {
+      my $value = $Hub->get($$directives{$name});
+      $parser->set_directive($name, [$value]);
+      $Hub->get('/sys/log')->info("Adding directive: $name = $value");
+    }
+  }
+  return $parser;
 }
 
 1;
