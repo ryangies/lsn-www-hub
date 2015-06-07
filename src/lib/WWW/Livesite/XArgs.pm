@@ -81,7 +81,7 @@ This hash is a composite of HTTP Headers and CGI parameters which begin with
 C<X-> (case sensitive).  This pool is used by convention to indicate system
 parameters, those which are used by the application to control the application.
 
-The running instance of this has is available at:
+The running instance of this hash is available at:
 
   /sys/request/xargs
 

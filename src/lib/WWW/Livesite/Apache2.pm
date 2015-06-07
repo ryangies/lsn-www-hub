@@ -337,7 +337,7 @@ sub _response_handler {
       throw Error::Simple "Max POST size exceded: $max" if $len > $max;
     }
 
-    # The Content-Type and X-Content-Format requrest headers indicate how the 
+    # The Content-Type and X-Content-Format request headers indicate how the 
     # POST body is formatted. Recognized values are:
     #
     #   application/json    JSON data format
