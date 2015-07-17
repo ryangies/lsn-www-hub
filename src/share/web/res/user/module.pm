@@ -12,8 +12,8 @@ sub ACCESS {
 }
 
 sub get {
-  $Hub->set('/sys/response/headers/<next>', ['Cache-Control', 'no-cache']);
-  $Hub->set('/sys/response/headers/<next>', ['Last-Modified', '0']);
+  $Hub->set('/sys/response/headersCache-Control', 'no-cache');
+  $Hub->set('/sys/response/headersLast-Modified', '0');
   my $token = $Hub->get('/sys/session')->get_auth_token();
   my $user = $Hub->get('/sys/user') or throw Error::AccessDenied;
   my $groups = $Hub->get('./form.hf/fieldsets/*/fields')

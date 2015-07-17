@@ -15,8 +15,8 @@ sub login {
 }
 
 sub get_nonce {
-  $Hub->set('/sys/response/headers/<next>', ['Cache-Control', 'no-cache']);
-  $Hub->set('/sys/response/headers/<next>', ['Last-Modified', '0']);
+  $Hub->set('/sys/response/headers/Cache-Control', 'no-cache');
+  $Hub->set('/sys/response/headers/Last-Modified', '0');
   $Hub->get('/sys/session')->get_auth_token();
 }
 
