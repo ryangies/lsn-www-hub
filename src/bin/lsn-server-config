@@ -10,7 +10,7 @@ use Data::Hub::Util qw(:all);
 use Data::OrderedHash;
 use App::TMS::Client;
 use App::Console::Color qw(:all);
-use Cwd qw(cwd);
+use Cwd qw(cwd abs_path);
 
 our %USAGE = ();
 
@@ -129,7 +129,7 @@ sub version {
         my $home = $$sconf{'dir-vhost-root'} . '/' . $$host{'domain'};
         my $local_path = "$home/opt/livesite";
         my $lsn_dir = -e $local_path
-          ? `readlink -f $local_path`
+          ? abs_path($local_path)
           : '(default)';
         chomp $lsn_dir;
         push @result, [$lsn_dir, $$host{'domain'}];

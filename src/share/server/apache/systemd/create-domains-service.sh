@@ -2,9 +2,7 @@
 
 # https://fedoraproject.org/wiki/Packaging:Systemd#Basic_format
 
-script_path=$(readlink -f $0)
-script_dir=$(dirname $script_path)
-
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 service_name='lsn-domains.service'
 
 system_unit_dir=$(pkg-config systemd --variable=systemdsystemunitdir)
