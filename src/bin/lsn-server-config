@@ -73,7 +73,7 @@ sub list {
       ? $sconf->{'server-external-ip'}
       : $sconf->{'server-internal-ip'});
     my $status = $$host{'disabled'} ? '-' : ' ';
-    printf "%s %-34s %-16s %s\n", $status, $host->{domain}, $ip, $items;
+    $self->printf("%s %-34s %-16s %s\n", $status, $host->{domain}, $ip, $items);
   });
 }
 
@@ -137,7 +137,7 @@ sub version {
     }
   }
   foreach my $fields (sort {$a->[0] cmp $b->[0]} @result) {
-    c_printf "%_b-20s %s\n", @$fields;
+    $self->printf("%_b-20s %s\n", @$fields);
   }
 }
 
@@ -433,8 +433,12 @@ sub remove {
         -d $archive_path or throw Error::Simple "$!: $archive_path\n";
         my $archive = "$archive_path/$domain.tar.bz2";
         throw Error::Simple "Archive exists\n" if -e $archive;
+        $self->printf("Reaping...\n");
         my $cwd = cwd();
+        chdir "$vhost_root/$domain";
+        system 'lsn-reaper', 'run';
         chdir $vhost_root;
+        $self->printf("Archiving...\n");
         system 'tar', '-cjpf', $archive, $domain;
         chdir $cwd;
         throw Error::Simple "Archive not created\n" unless -e $archive;
@@ -442,19 +446,23 @@ sub remove {
     }
     # remove proxy config
     if (my $host = $pconf->get("/hosts/{domain eq $domain}/{:first}")) {
+      $self->printf("Removing proxy configuration...\n");
       $pconf->delete("/hosts/{domain eq $domain}");
       $pconf->save();
-    } else {
-        throw Error::Simple "No such domain";
     }
     # remove user
-    system('userdel', $domain) unless $sconf->{'use-global-user'};
+    unless ($sconf->{'use-global-user'}) {
+      $self->printf("Removing user...\n");
+      system('userdel', $domain)
+    }
     # remove initd script
     $self->initd($domain, -remove => 1);
     # remove virtual host directory (after initd stops)
+    $self->printf("Removing domain directory...\n");
     dir_remove("$vhost_root/$domain");
     warn "Directory not deleted\n" if -e "$vhost_root/$domain";
     # update configs
+    $self->printf("Updating configuration files...\n");
     my $server_tms = App::TMS::Client->new(cwd());
     $server_tms->exec('update');
   }
