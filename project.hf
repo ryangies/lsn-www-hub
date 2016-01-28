@@ -8,7 +8,7 @@ license => mit
 version => @{
   5
   0
-  282
+  284
 }
 scripts => @{
   src/bin/lsn-server-config
