@@ -152,6 +152,10 @@ sub _header_parser_handler {
   $sys_req->{'qs'} = $args;
   $sys_req->{'hostname'} = $req_uri->hostname;  # example.com
   $sys_req->{'method'} = $r->method;            # GET|POST|...
+  $sys_req->{'client'} = {
+    'ip' => $r->connection->client_ip,
+    'addr' => $r->connection->client_addr
+  };
 
   # URI Scheme (http|https)
   my $ssl_config = $Main->{'sys'}->get('conf/modules/ssl') || {};
