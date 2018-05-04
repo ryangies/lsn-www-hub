@@ -104,18 +104,20 @@ sub get_rtag {
 
 sub assert_same_origin {
   my $self = shift;
-  # Ensure refering domain
-  my $referer = $self->{'headers'}{'Referer'} or
-    throw Error::Logical('Missing referrer header');
-  my ($server) = $referer =~ /^[^:\/]+:\/\/([^:\/]+)/ or
-    throw Error::Logical('Invalid referrer header (no server)');
-  my ($domain) = $server =~ /([^@]+)$/ or
-    throw Error::Logical('Invalid referrer header (no domain)');
-  my @referer = reverse split /\./, $domain;
   my $hostname = $Hub->str('/sys/server/name');
-  my @host = reverse split /\./, $hostname;
-  throw Error::AccessDenied 'Host mismatch'
-    unless ($host[0] eq $referer[0] && $host[1] eq $referer[1]);
+  if ($hostname !~ /^(127.0.0.1|ANY|ALL)$/i) {
+    # Ensure refering domain
+    my $referer = $self->{'headers'}{'Referer'} or
+      throw Error::Logical('Missing referrer header');
+    my ($server) = $referer =~ /^[^:\/]+:\/\/([^:\/]+)/ or
+      throw Error::Logical('Invalid referrer header (no server)');
+    my ($domain) = $server =~ /([^@]+)$/ or
+      throw Error::Logical('Invalid referrer header (no domain)');
+    my @referer = reverse split /\./, $domain;
+    my @host = reverse split /\./, $hostname;
+    throw Error::AccessDenied 'Host mismatch'
+      unless ($host[0] eq $referer[0] && $host[1] eq $referer[1]);
+  }
 }
 
 # ------------------------------------------------------------------------------
