@@ -112,7 +112,7 @@ sub rif_upload {
   if ($$ctx{'slow_upload'}) {
     $$Hub{'/sys/log'}->warn(sprintf('TRANSFER: [%s] received %d of %d',
       $xfrid, $$ctx{'received'}, $$ctx{'size'}));
-    sleep(.3);
+    sleep($$ctx{'slow_upload'});
   }
   return Apache2::Const::OK;
 }
